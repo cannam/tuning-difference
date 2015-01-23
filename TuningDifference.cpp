@@ -69,7 +69,7 @@ TuningDifference::getInputDomain() const
 size_t
 TuningDifference::getPreferredBlockSize() const
 {
-    return 16386;
+    return 16384;
 }
 
 size_t 
@@ -226,7 +226,7 @@ TuningDifference::getRemainingFeatures()
     for (int shift = -(n-1); shift <= n-1; ++shift) {
 	int index = shift + n-1;
 	int count = 0;
-	cerr << "index = " << index << ", n = " << n << endl;
+//	cerr << "index = " << index << ", n = " << n << endl;
 	for (int i = 0; i < n; ++i) {
 	    int j = i + shift;
 	    if (j >= 0 && j < n) {
@@ -238,7 +238,7 @@ TuningDifference::getRemainingFeatures()
 	    corr[index] /= count;
 	}
 	f.values.clear();
-	cerr << "value = " << corr[index] << endl;
+//	cerr << "value = " << corr[index] << endl;
 	f.values.push_back(corr[index]);
 	fs[2].push_back(f);
     }
