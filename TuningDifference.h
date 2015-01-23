@@ -4,7 +4,7 @@
 #include <vamp-sdk/Plugin.h>
 
 using std::string;
-
+using std::vector;
 
 class TuningDifference : public Vamp::Plugin
 {
@@ -44,7 +44,9 @@ public:
     FeatureSet getRemainingFeatures();
 
 protected:
-    // plugin-specific data and methods go here
+    int m_blockSize;
+    vector<double> m_sum[2];
+    int m_frameCount;
 };
 
 

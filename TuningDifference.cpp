@@ -1,6 +1,11 @@
 
 #include "TuningDifference.h"
 
+#include <iostream>
+
+using std::cerr;
+using std::endl;
+
 
 TuningDifference::TuningDifference(float inputSampleRate) :
     Plugin(inputSampleRate)
@@ -14,13 +19,13 @@ TuningDifference::~TuningDifference()
 string
 TuningDifference::getIdentifier() const
 {
-    return "myplugin";
+    return "tuning-difference";
 }
 
 string
 TuningDifference::getName() const
 {
-    return "My Plugin";
+    return "Tuning Difference";
 }
 
 string
@@ -58,90 +63,55 @@ TuningDifference::getCopyright() const
 TuningDifference::InputDomain
 TuningDifference::getInputDomain() const
 {
-    return TimeDomain;
+    return FrequencyDomain;
 }
 
 size_t
 TuningDifference::getPreferredBlockSize() const
 {
-    return 0; // 0 means "I can handle any block size"
+    return 16386;
 }
 
 size_t 
 TuningDifference::getPreferredStepSize() const
 {
-    return 0; // 0 means "anything sensible"; in practice this
-              // means the same as the block size for TimeDomain
-              // plugins, or half of it for FrequencyDomain plugins
+    return 0;
 }
 
 size_t
 TuningDifference::getMinChannelCount() const
 {
-    return 1;
+    return 2;
 }
 
 size_t
 TuningDifference::getMaxChannelCount() const
 {
-    return 1;
+    return 2;
 }
 
 TuningDifference::ParameterList
 TuningDifference::getParameterDescriptors() const
 {
     ParameterList list;
-
-    // If the plugin has no adjustable parameters, return an empty
-    // list here (and there's no need to provide implementations of
-    // getParameter and setParameter in that case either).
-
-    // Note that it is your responsibility to make sure the parameters
-    // start off having their default values (e.g. in the constructor
-    // above).  The host needs to know the default value so it can do
-    // things like provide a "reset to default" function, but it will
-    // not explicitly set your parameters to their defaults for you if
-    // they have not changed in the mean time.
-
-    ParameterDescriptor d;
-    d.identifier = "parameter";
-    d.name = "Some Parameter";
-    d.description = "";
-    d.unit = "";
-    d.minValue = 0;
-    d.maxValue = 10;
-    d.defaultValue = 5;
-    d.isQuantized = false;
-    list.push_back(d);
-
     return list;
 }
 
 float
-TuningDifference::getParameter(string identifier) const
+TuningDifference::getParameter(string) const
 {
-    if (identifier == "parameter") {
-        return 5; // return the ACTUAL current value of your parameter here!
-    }
     return 0;
 }
 
 void
-TuningDifference::setParameter(string identifier, float value) 
+TuningDifference::setParameter(string, float) 
 {
-    if (identifier == "parameter") {
-        // set the actual value of your parameter
-    }
 }
 
 TuningDifference::ProgramList
 TuningDifference::getPrograms() const
 {
     ProgramList list;
-
-    // If you have no programs, return an empty list (or simply don't
-    // implement this function or getCurrentProgram/selectProgram)
-
     return list;
 }
 
@@ -152,7 +122,7 @@ TuningDifference::getCurrentProgram() const
 }
 
 void
-TuningDifference::selectProgram(string name)
+TuningDifference::selectProgram(string)
 {
 }
 
@@ -161,19 +131,41 @@ TuningDifference::getOutputDescriptors() const
 {
     OutputList list;
 
-    // See OutputDescriptor documentation for the possibilities here.
-    // Every plugin must have at least one output.
-
     OutputDescriptor d;
-    d.identifier = "output";
-    d.name = "My Output";
+    d.identifier = "cents";
+    d.name = "Tuning Difference";
+    d.description = "Difference in averaged frequency profile between channels 1 and 2, in cents. A positive value means channel 2 is higher.";
+    d.unit = "cents";
+    d.hasFixedBinCount = true;
+    d.binCount = 1;
+    d.hasKnownExtents = false;
+    d.isQuantized = false;
+    d.sampleType = OutputDescriptor::VariableSampleRate;
+    d.hasDuration = false;
+    list.push_back(d);
+
+    d.identifier = "tuningfreq";
+    d.name = "Relative Tuning Frequency";
+    d.description = "Tuning frequency of channel 2, if channel 1 is assumed to contain the same music as it at a tuning frequency of A=440Hz.";
+    d.unit = "cents";
+    d.hasFixedBinCount = true;
+    d.binCount = 1;
+    d.hasKnownExtents = false;
+    d.isQuantized = false;
+    d.sampleType = OutputDescriptor::VariableSampleRate;
+    d.hasDuration = false;
+    list.push_back(d);
+
+    d.identifier = "correlation";
+    d.name = "Frequency-shift correlation curve";
     d.description = "";
     d.unit = "";
     d.hasFixedBinCount = true;
     d.binCount = 1;
     d.hasKnownExtents = false;
     d.isQuantized = false;
-    d.sampleType = OutputDescriptor::OneSamplePerStep;
+    d.sampleType = OutputDescriptor::FixedSampleRate;
+    d.sampleRate = 100;
     d.hasDuration = false;
     list.push_back(d);
 
@@ -186,27 +178,71 @@ TuningDifference::initialise(size_t channels, size_t stepSize, size_t blockSize)
     if (channels < getMinChannelCount() ||
 	channels > getMaxChannelCount()) return false;
 
-    // Real initialisation work goes here!
+    if (blockSize != getPreferredBlockSize() ||
+	stepSize != blockSize/2) return false;
 
+    m_blockSize = blockSize;
+
+    reset();
+    
     return true;
 }
 
 void
 TuningDifference::reset()
 {
-    // Clear buffers, reset stored values, etc
+    m_sum[0].clear();
+    m_sum[1].clear();
+    m_frameCount = 0;
 }
 
 TuningDifference::FeatureSet
 TuningDifference::process(const float *const *inputBuffers, Vamp::RealTime timestamp)
 {
-    // Do actual work!
+    for (int c = 0; c < 2; ++c) {
+	m_sum[c].resize(m_blockSize/2 - 1);
+	for (int i = 1; i < m_blockSize/2; ++i) { // discarding DC and Nyquist
+	    double energy =
+		inputBuffers[c][i*2  ] * inputBuffers[c][i*2  ] +
+		inputBuffers[c][i*2+1] * inputBuffers[c][i*2+1];
+	    m_sum[c][i-1] += energy;
+	}
+    }
+    
+    ++m_frameCount;
     return FeatureSet();
 }
 
 TuningDifference::FeatureSet
 TuningDifference::getRemainingFeatures()
 {
-    return FeatureSet();
+    int n = m_sum[0].size();
+    if (n == 0) return FeatureSet();
+
+    Feature f;
+    FeatureSet fs;
+    
+    vector<double> corr(n * 2 - 1, 0.0);
+    for (int shift = -(n-1); shift <= n-1; ++shift) {
+	int index = shift + n-1;
+	int count = 0;
+	cerr << "index = " << index << ", n = " << n << endl;
+	for (int i = 0; i < n; ++i) {
+	    int j = i + shift;
+	    if (j >= 0 && j < n) {
+		corr[index] += m_sum[1][i] * m_sum[0][j];
+		++count;
+	    }
+	}
+	if (count > 0) {
+	    corr[index] /= count;
+	}
+	f.values.clear();
+	cerr << "value = " << corr[index] << endl;
+	f.values.push_back(corr[index]);
+	fs[2].push_back(f);
+    }
+
+    return fs;
 }
 

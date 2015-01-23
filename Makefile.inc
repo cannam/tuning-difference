@@ -71,3 +71,7 @@ distclean:	clean
 depend:
 	makedepend -Y -fMakefile.inc $(PLUGIN_SOURCES) $(PLUGIN_HEADERS)
 
+# DO NOT DELETE
+
+TuningDifference.o: TuningDifference.h
+plugins.o: TuningDifference.h
