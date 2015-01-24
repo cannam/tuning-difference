@@ -221,6 +221,8 @@ TuningDifference::getRemainingFeatures()
 
     Feature f;
     FeatureSet fs;
+
+//!!! todo: spectral pitch shift is multiplicative not linear
     
     vector<double> corr(n * 2 - 1, 0.0);
     for (int shift = -(n-1); shift <= n-1; ++shift) {
