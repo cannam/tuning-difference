@@ -3,9 +3,11 @@
 
 #include <iostream>
 
+#include <cmath>
+#include <cstdio>
+
 using std::cerr;
 using std::endl;
-
 
 TuningDifference::TuningDifference(float inputSampleRate) :
     Plugin(inputSampleRate)
@@ -147,7 +149,7 @@ TuningDifference::getOutputDescriptors() const
     d.identifier = "tuningfreq";
     d.name = "Relative Tuning Frequency";
     d.description = "Tuning frequency of channel 2, if channel 1 is assumed to contain the same music as it at a tuning frequency of A=440Hz.";
-    d.unit = "cents";
+    d.unit = "hz";
     d.hasFixedBinCount = true;
     d.binCount = 1;
     d.hasKnownExtents = false;
@@ -156,12 +158,25 @@ TuningDifference::getOutputDescriptors() const
     d.hasDuration = false;
     list.push_back(d);
 
-    d.identifier = "correlation";
-    d.name = "Frequency-shift correlation curve";
-    d.description = "";
+    d.identifier = "curve";
+    d.name = "Shift Correlation Curve";
+    d.description = "Correlation between shifted and unshifted sources, for each probed shift in cents.";
     d.unit = "";
     d.hasFixedBinCount = true;
     d.binCount = 1;
+    d.hasKnownExtents = false;
+    d.isQuantized = false;
+    d.sampleType = OutputDescriptor::FixedSampleRate;
+    d.sampleRate = 100;
+    d.hasDuration = false;
+    list.push_back(d);
+
+    d.identifier = "averages";
+    d.name = "Spectrum averages";
+    d.description = "Average magnitude spectrum for each channel.";
+    d.unit = "";
+    d.hasFixedBinCount = true;
+    d.binCount = 2;
     d.hasKnownExtents = false;
     d.isQuantized = false;
     d.sampleType = OutputDescriptor::FixedSampleRate;
@@ -200,12 +215,14 @@ TuningDifference::FeatureSet
 TuningDifference::process(const float *const *inputBuffers, Vamp::RealTime timestamp)
 {
     for (int c = 0; c < 2; ++c) {
-	m_sum[c].resize(m_blockSize/2 - 1);
-	for (int i = 1; i < m_blockSize/2; ++i) { // discarding DC and Nyquist
+	if (m_sum[c].size() == 0) {
+	    m_sum[c].resize(m_blockSize/2 + 1, 0.0);
+	}
+	for (int i = 0; i <= m_blockSize/2; ++i) {
 	    double energy =
 		inputBuffers[c][i*2  ] * inputBuffers[c][i*2  ] +
 		inputBuffers[c][i*2+1] * inputBuffers[c][i*2+1];
-	    m_sum[c][i-1] += energy;
+	    m_sum[c][i] += sqrt(energy);
 	}
     }
     
@@ -222,29 +239,92 @@ TuningDifference::getRemainingFeatures()
     Feature f;
     FeatureSet fs;
 
-//!!! todo: spectral pitch shift is multiplicative not linear
-    
-    vector<double> corr(n * 2 - 1, 0.0);
-    for (int shift = -(n-1); shift <= n-1; ++shift) {
-	int index = shift + n-1;
-	int count = 0;
-//	cerr << "index = " << index << ", n = " << n << endl;
-	for (int i = 0; i < n; ++i) {
-	    int j = i + shift;
-	    if (j >= 0 && j < n) {
-		corr[index] += m_sum[1][i] * m_sum[0][j];
-		++count;
-	    }
-	}
-	if (count > 0) {
-	    corr[index] /= count;
-	}
-	f.values.clear();
-//	cerr << "value = " << corr[index] << endl;
-	f.values.push_back(corr[index]);
-	fs[2].push_back(f);
+    int maxshift = 2400; // cents
+
+    int bestshift = -1;
+    double bestdist = 0;
+
+    for (int i = 0; i < n; ++i) {
+	m_sum[0][i] /= m_frameCount;
+	m_sum[1][i] /= m_frameCount;
     }
 
+    for (int c = 0; c < 2; ++c) {
+	double tot = 0.0;
+	for (int i = 0; i < n; ++i) {
+	    tot += m_sum[c][i];
+	}
+	if (tot != 0.0) {
+	    for (int i = 0; i < n; ++i) {
+		m_sum[c][i] /= tot;
+	    }
+	}
+    }
+	
+    for (int i = 0; i < n; ++i) {
+	f.values.clear();
+	f.values.push_back(m_sum[0][i]);
+	f.values.push_back(m_sum[1][i]);
+	fs[3].push_back(f);
+    }
+
+    f.values.clear();
+
+    for (int shift = -maxshift; shift <= maxshift; ++shift) {
+
+	double multiplier = pow(2.0, double(shift) / 1200.0);
+	double dist = 0.0;
+
+//	cerr << "shift = " << shift << ", multiplier = " << multiplier << endl;
+	
+	for (int i = 0; i < n; ++i) {
+
+	    double source = i / multiplier;
+	    int s0 = int(source), s1 = s0 + 1;
+	    double p1 = source - s0;
+	    double p0 = 1.0 - p1;
+
+	    double value = 0.0;
+	    if (s0 >= 0 && s0 < n) {
+		value += p0 * m_sum[1][s0];
+	    }
+	    if (s1 >= 0 && s1 < n) {
+		value += p1 * m_sum[1][s1];
+	    }
+
+//	    if (shift == -1) {
+//		cerr << "for multiplier " << multiplier << ", target " << i << ", source " << source << ", value " << p0 << " * " << m_sum[1][s0] << " + " << p1 << " * " << m_sum[1][s1] << " = " << value << ", other " << m_sum[0][i] << endl;
+//	    }
+	    
+	    double diff = fabs(m_sum[0][i] - value);
+	    dist += diff;
+	}
+
+	f.values.clear();
+	f.values.push_back(dist);
+	char label[100];
+	sprintf(label, "%f at shift %d freq mult %f", dist, shift, multiplier);
+	f.label = label;
+	fs[2].push_back(f);
+
+	if (bestshift == -1 || dist < bestdist) {
+	    bestshift = shift;
+	    bestdist = dist;
+	}
+    }
+
+    f.timestamp = Vamp::RealTime::zeroTime;
+    f.hasTimestamp = true;
+
+    f.values.clear();
+//    cerr << "best dist = " << bestdist << " at shift " << bestshift << endl;
+    f.values.push_back(-bestshift);
+    fs[0].push_back(f);
+
+    f.values.clear();
+    f.values.push_back(440.0 / pow(2.0, double(bestshift) / 1200.0));
+    fs[1].push_back(f);
+    
     return fs;
 }
 
