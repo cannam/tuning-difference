@@ -9,6 +9,9 @@
 using std::cerr;
 using std::endl;
 
+static double targetFmin = 60.0;
+static double targetFmax = 1500.0;
+
 TuningDifference::TuningDifference(float inputSampleRate) :
     Plugin(inputSampleRate)
 {
@@ -171,16 +174,20 @@ TuningDifference::getOutputDescriptors() const
     d.hasDuration = false;
     list.push_back(d);
 
+    int targetBinMin = int(floor(targetFmin * m_blockSize / m_inputSampleRate));
+    int targetBinMax = int(ceil(targetFmax * m_blockSize / m_inputSampleRate));
+    cerr << "target bin range: " << targetBinMin << " -> " << targetBinMax << endl;
+
     d.identifier = "averages";
     d.name = "Spectrum averages";
     d.description = "Average magnitude spectrum for each channel.";
     d.unit = "";
     d.hasFixedBinCount = true;
-    d.binCount = 2;
+    d.binCount = (targetBinMax > targetBinMin ? targetBinMax - targetBinMin + 1 : 100);
     d.hasKnownExtents = false;
     d.isQuantized = false;
     d.sampleType = OutputDescriptor::FixedSampleRate;
-    d.sampleRate = 100;
+    d.sampleRate = 1;
     d.hasDuration = false;
     list.push_back(d);
 
@@ -222,7 +229,9 @@ TuningDifference::process(const float *const *inputBuffers, Vamp::RealTime times
 	    double energy =
 		inputBuffers[c][i*2  ] * inputBuffers[c][i*2  ] +
 		inputBuffers[c][i*2+1] * inputBuffers[c][i*2+1];
-	    m_sum[c][i] += sqrt(energy);
+	    double mag = sqrt(energy);
+	    m_sum[c][i] += mag;
+	    m_sum[c][i/2] += mag;
 	}
     }
     
@@ -260,24 +269,34 @@ TuningDifference::getRemainingFeatures()
 	    }
 	}
     }
+
+    int targetBinMin = int(floor(targetFmin * m_blockSize / m_inputSampleRate));
+    int targetBinMax = int(ceil(targetFmax * m_blockSize / m_inputSampleRate));
+    cerr << "target bin range: " << targetBinMin << " -> " << targetBinMax << endl;
 	
-    for (int i = 0; i < n; ++i) {
-	f.values.clear();
+    f.values.clear();
+    for (int i = targetBinMin; i < targetBinMax; ++i) {
 	f.values.push_back(m_sum[0][i]);
-	f.values.push_back(m_sum[1][i]);
-	fs[3].push_back(f);
     }
+    fs[3].push_back(f);
+    f.values.clear();
+    for (int i = targetBinMin; i < targetBinMax; ++i) {
+	f.values.push_back(m_sum[1][i]);
+    }
+    fs[3].push_back(f);
 
     f.values.clear();
-
+    
     for (int shift = -maxshift; shift <= maxshift; ++shift) {
 
 	double multiplier = pow(2.0, double(shift) / 1200.0);
 	double dist = 0.0;
 
 //	cerr << "shift = " << shift << ", multiplier = " << multiplier << endl;
+
+	int contributing = 0;
 	
-	for (int i = 0; i < n; ++i) {
+	for (int i = targetBinMin; i < targetBinMax; ++i) {
 
 	    double source = i / multiplier;
 	    int s0 = int(source), s1 = s0 + 1;
@@ -287,9 +306,11 @@ TuningDifference::getRemainingFeatures()
 	    double value = 0.0;
 	    if (s0 >= 0 && s0 < n) {
 		value += p0 * m_sum[1][s0];
+		++contributing;
 	    }
 	    if (s1 >= 0 && s1 < n) {
 		value += p1 * m_sum[1][s1];
+		++contributing;
 	    }
 
 //	    if (shift == -1) {
@@ -300,6 +321,8 @@ TuningDifference::getRemainingFeatures()
 	    dist += diff;
 	}
 
+	dist /= contributing;
+	
 	f.values.clear();
 	f.values.push_back(dist);
 	char label[100];
@@ -315,6 +338,7 @@ TuningDifference::getRemainingFeatures()
 
     f.timestamp = Vamp::RealTime::zeroTime;
     f.hasTimestamp = true;
+    f.label = "";
 
     f.values.clear();
 //    cerr << "best dist = " << bestdist << " at shift " << bestshift << endl;
