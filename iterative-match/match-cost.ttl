@@ -1,0 +1,17 @@
+@prefix xsd:      <http://www.w3.org/2001/XMLSchema#> .
+@prefix vamp:     <http://purl.org/ontology/vamp/> .
+@prefix :         <#> .
+
+:param_freq
+    vamp:parameter [ vamp:identifier "freq2" ] ;
+    vamp:value "440"^^xsd:float .
+
+:transform_a a vamp:Transform ;
+    vamp:plugin <http://vamp-plugins.org/rdf/plugins/match-vamp-plugin#match> ;
+    vamp:plugin_version "3"^^xsd:int ;
+    vamp:step_size "882"^^xsd:int ; 
+    vamp:block_size "2048"^^xsd:int ; 
+    vamp:sample_rate "44100"^^xsd:int ;
+    vamp:parameter_binding :param_freq ;
+    vamp:output [ vamp:identifier "overall_cost" ] .
+

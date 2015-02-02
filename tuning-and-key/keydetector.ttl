@@ -1,0 +1,14 @@
+@prefix xsd:      <http://www.w3.org/2001/XMLSchema#> .
+@prefix vamp:     <http://purl.org/ontology/vamp/> .
+@prefix :         <#> .
+
+:param_tuningfreq
+    vamp:parameter [ vamp:identifier "tuning" ] ;
+    vamp:value "440"^^xsd:float .
+
+:transform_a a vamp:Transform ;
+    vamp:plugin <http://vamp-plugins.org/rdf/plugins/qm-vamp-plugins#qm-keydetector> ;
+    vamp:sample_rate "44100"^^xsd:int ;
+    vamp:parameter_binding :param_tuningfreq ;
+    vamp:output [ vamp:identifier "tonic" ] .
+
