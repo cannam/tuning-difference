@@ -38,7 +38,7 @@ extract() {
     hz="$1"
     file="$2"
     cat chroma-excerpt.ttl | sed 's,"440","'"$hz"'",' > "$transform"
-    sonic-annotator -t "$transform" --summary mean --summary-only -w csv --csv-stdout --csv-omit-filename "$file" 2>/dev/null | cut -d, -f4-15 | sed 's/,/\n/g'
+    sonic-annotator -t "$transform" --summary mean --summary-only -w csv --csv-stdout --csv-omit-filename "$file" 2>/dev/null | cut -d, -f4-63 | sed 's/,/\n/g'
 }
 
 extract 440 "$reference" | cat -n > "$refchroma"
@@ -59,7 +59,7 @@ for cents in $(seq -400 10 400) ; do
 
     dist=$( cat "$tmpscript" | dc )
     echo "$dist $hz"
-
+    
 done | tee "$scores"
 
 echo
