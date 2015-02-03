@@ -23,7 +23,7 @@ transform="/tmp/$$.ttl"
 scores="/tmp/$$.scores.txt"
 trap "rm $transform $scores" 0
 
-export VAMP_PATH="$mypath"/../match-vamp
+#export VAMP_PATH="$mypath"/../match-vamp
 
 sox "$reference" -r 44100 -c 1 a.wav
 sox "$other" -r 44100 -c 1 b.wav

@@ -2,6 +2,10 @@
 @prefix vamp:     <http://purl.org/ontology/vamp/> .
 @prefix :         <#> .
 
+:param_chroma
+    vamp:parameter [ vamp:identifier "usechroma" ] ;
+    vamp:value "1"^^xsd:float .
+
 :param_freq
     vamp:parameter [ vamp:identifier "freq2" ] ;
     vamp:value "440"^^xsd:float .
@@ -12,6 +16,7 @@
     vamp:step_size "882"^^xsd:int ; 
     vamp:block_size "2048"^^xsd:int ; 
     vamp:sample_rate "44100"^^xsd:int ;
+    vamp:parameter_binding :param_chroma ;
     vamp:parameter_binding :param_freq ;
     vamp:output [ vamp:identifier "overall_cost" ] .
 

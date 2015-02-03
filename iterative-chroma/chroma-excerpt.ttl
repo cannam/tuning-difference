@@ -10,15 +10,15 @@
     vamp:duration "PT30S"^^xsd:duration ;
     vamp:parameter_binding [
         vamp:parameter [ vamp:identifier "bpo" ] ;
-        vamp:value "12"^^xsd:float ;
+        vamp:value "60"^^xsd:float ;
     ] ;
     vamp:parameter_binding [
         vamp:parameter [ vamp:identifier "lowestoct" ] ;
-        vamp:value "0"^^xsd:float ;
+        vamp:value "1"^^xsd:float ;
     ] ;
     vamp:parameter_binding [
         vamp:parameter [ vamp:identifier "octaves" ] ;
-        vamp:value "7"^^xsd:float ;
+        vamp:value "5"^^xsd:float ;
     ] ;
     vamp:parameter_binding [
         vamp:parameter [ vamp:identifier "tuning" ] ;
