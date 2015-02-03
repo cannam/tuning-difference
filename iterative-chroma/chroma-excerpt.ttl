@@ -3,25 +3,18 @@
 @prefix :         <#> .
 
 :transform a vamp:Transform ;
-    vamp:plugin <http://vamp-plugins.org/rdf/plugins/cqvamp#cqchromavamp> ;
-    vamp:step_size "1024"^^xsd:int ; 
-    vamp:block_size "1024"^^xsd:int ; 
-    vamp:plugin_version """1""" ;
+    vamp:plugin <http://vamp-plugins.org/rdf/plugins/qm-vamp-plugins#qm-chromagram> ;
     vamp:duration "PT30S"^^xsd:duration ;
     vamp:parameter_binding [
         vamp:parameter [ vamp:identifier "bpo" ] ;
         vamp:value "60"^^xsd:float ;
     ] ;
     vamp:parameter_binding [
-        vamp:parameter [ vamp:identifier "lowestoct" ] ;
-        vamp:value "1"^^xsd:float ;
-    ] ;
-    vamp:parameter_binding [
-        vamp:parameter [ vamp:identifier "octaves" ] ;
-        vamp:value "5"^^xsd:float ;
-    ] ;
-    vamp:parameter_binding [
         vamp:parameter [ vamp:identifier "tuning" ] ;
         vamp:value "440"^^xsd:float ;
     ] ;
-    vamp:output <http://vamp-plugins.org/rdf/plugins/cqvamp#cqchromavamp_output_chromagram> .
+    vamp:parameter_binding [
+        vamp:parameter [ vamp:identifier "normalization" ] ;
+        vamp:value "1"^^xsd:float ;  # unit sum
+    ] ;
+    vamp:output <http://vamp-plugins.org/rdf/plugins/qm-vamp-plugins#qm-chromagram_output_chromagram> .
