@@ -179,8 +179,8 @@ TuningDifference::getOutputDescriptors() const
     cerr << "target bin range: " << targetBinMin << " -> " << targetBinMax << endl;
 
     d.identifier = "averages";
-    d.name = "Spectrum averages";
-    d.description = "Average magnitude spectrum for each channel.";
+    d.name = "Harmonic spectrum averages";
+    d.description = "Average of harmonic spectrum for each channel.";
     d.unit = "";
     d.hasFixedBinCount = true;
     d.binCount = (targetBinMax > targetBinMin ? targetBinMax - targetBinMin + 1 : 100);
@@ -225,13 +225,31 @@ TuningDifference::process(const float *const *inputBuffers, Vamp::RealTime times
 	if (m_sum[c].size() == 0) {
 	    m_sum[c].resize(m_blockSize/2 + 1, 0.0);
 	}
+	vector<double> mags(m_blockSize/2 + 1, 0.0);
 	for (int i = 0; i <= m_blockSize/2; ++i) {
 	    double energy =
 		inputBuffers[c][i*2  ] * inputBuffers[c][i*2  ] +
 		inputBuffers[c][i*2+1] * inputBuffers[c][i*2+1];
 	    double mag = sqrt(energy);
-	    m_sum[c][i] += mag;
-	    m_sum[c][i/2] += mag;
+	    mags[i] = mag;
+	}
+	for (int i = 0; i <= m_blockSize/2; ++i) {
+	    for (int h = 2; h <= 4; ++h) {
+		double max = 0.0;
+		for (int j = 0; j <= h; ++j) {
+		    int ix = i * h + j - h/2;
+		    if (ix <= m_blockSize/2) {
+			double harmMag = mags[ix];
+			if (j == 0 || harmMag > max) {
+			    max = harmMag;
+			}
+		    }
+		}
+		mags[i] += max;
+	    }
+	}
+	for (int i = 0; i <= m_blockSize/2; ++i) {
+	    m_sum[c][i] += mags[i];
 	}
     }
     
@@ -259,8 +277,22 @@ TuningDifference::getRemainingFeatures()
     }
 
     for (int c = 0; c < 2; ++c) {
-	double tot = 0.0;
 	for (int i = 0; i < n; ++i) {
+	    if (i == 0 || i == n-1 ||
+		m_sum[c][i] < m_sum[c][i-1] ||
+		m_sum[c][i] < m_sum[c][i+1]) {
+		m_sum[c][i] = 0.0;
+	    }
+	}
+    }
+
+    int targetBinMin = int(floor(targetFmin * m_blockSize / m_inputSampleRate));
+    int targetBinMax = int(ceil(targetFmax * m_blockSize / m_inputSampleRate));
+    cerr << "target bin range: " << targetBinMin << " -> " << targetBinMax << endl;
+
+    for (int c = 0; c < 2; ++c) {
+	double tot = 0.0;
+	for (int i = targetBinMin; i <= targetBinMax; ++i) {
 	    tot += m_sum[c][i];
 	}
 	if (tot != 0.0) {
@@ -269,10 +301,6 @@ TuningDifference::getRemainingFeatures()
 	    }
 	}
     }
-
-    int targetBinMin = int(floor(targetFmin * m_blockSize / m_inputSampleRate));
-    int targetBinMax = int(ceil(targetFmax * m_blockSize / m_inputSampleRate));
-    cerr << "target bin range: " << targetBinMin << " -> " << targetBinMax << endl;
 	
     f.values.clear();
     for (int i = targetBinMin; i < targetBinMax; ++i) {
@@ -341,7 +369,7 @@ TuningDifference::getRemainingFeatures()
     f.label = "";
 
     f.values.clear();
-//    cerr << "best dist = " << bestdist << " at shift " << bestshift << endl;
+    cerr << "best dist = " << bestdist << " at shift " << bestshift << endl;
     f.values.push_back(-bestshift);
     fs[0].push_back(f);
 
