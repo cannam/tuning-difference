@@ -1,28 +1,4 @@
 
-##  Makefile for Vamp plugin builds using command-line tools.
-##
-##  This file defines all of the system-independent information about
-##  your project: the list of source files, plugin library name, etc.
-##  Edit this file to make sure it has all the right information.
-##
-##  This file does not define the system-specific stuff such as which
-##  compiler to use -- that goes into Makefile.osx, Makefile.mingw32,
-##  Makefile.linux etc.  Those files all include this file, so that
-##  they all have a consistent set of project data.
-##
-##  To build the plugin project, type
-##
-##    $ gmake -f Makefile.osx
-##
-##  or whatever the equivalent filename suffix is for your platform.
-##
-##  This requires GNU make, which is what you get with OS/X, Linux, or
-##  MinGW/Cygwin on Windows.
-##
-##  (For Windows builds using MS Visual Studio, start instead with the
-##  VampExamplePlugins project found in the build directory of the SDK.)
-
-
 # Edit this to the base name of your plugin library
 #
 PLUGIN_LIBRARY_NAME := tuning-difference
@@ -41,9 +17,9 @@ PLUGIN_HEADERS := TuningDifference.h
 SRC_DIR		:= .
 
 CFLAGS		:= $(ARCHFLAGS) $(CFLAGS)
-CXXFLAGS	:= $(CFLAGS) -I. -I$(VAMPSDK_DIR) $(CXXFLAGS)
+CXXFLAGS	:= $(CFLAGS) -I. -I$(VAMPSDK_DIR) -I../../constant-q-cpp $(CXXFLAGS)
 
-LDFLAGS		:= $(ARCHFLAGS) $(LDFLAGS) 
+LDFLAGS		:= $(ARCHFLAGS) $(LDFLAGS) -L../../constant-q-cpp -lcq
 PLUGIN_LDFLAGS	:= $(LDFLAGS) $(PLUGIN_LDFLAGS)
 
 # Defaults, overridden from the platform-specific Makefile

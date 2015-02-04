@@ -6,14 +6,28 @@
 #include <cmath>
 #include <cstdio>
 
-using std::cerr;
-using std::endl;
+#include <algorithm>
 
-static double targetFmin = 60.0;
-static double targetFmax = 1500.0;
+using namespace std;
+
+static double pitchToFrequency(int pitch,
+			       double centsOffset = 0.,
+			       double concertA = 440.)
+{
+    double p = double(pitch) + (centsOffset / 100.);
+    return concertA * pow(2.0, (p - 69.0) / 12.0); 
+}
+
+static double frequencyForCentsAbove440(double cents)
+{
+    return pitchToFrequency(69, cents, 440.);
+}
 
 TuningDifference::TuningDifference(float inputSampleRate) :
-    Plugin(inputSampleRate)
+    Plugin(inputSampleRate),
+    m_bpo(60),
+    m_refCQ(new CQSpectrogram(paramsForTuningFrequency(440.),
+			      CQSpectrogram::InterpolateHold))
 {
 }
 
@@ -68,13 +82,13 @@ TuningDifference::getCopyright() const
 TuningDifference::InputDomain
 TuningDifference::getInputDomain() const
 {
-    return FrequencyDomain;
+    return TimeDomain;
 }
 
 size_t
 TuningDifference::getPreferredBlockSize() const
 {
-    return 16384;
+    return 0;
 }
 
 size_t 
@@ -147,6 +161,7 @@ TuningDifference::getOutputDescriptors() const
     d.isQuantized = false;
     d.sampleType = OutputDescriptor::VariableSampleRate;
     d.hasDuration = false;
+    m_outputs[d.identifier] = list.size();
     list.push_back(d);
 
     d.identifier = "tuningfreq";
@@ -159,36 +174,49 @@ TuningDifference::getOutputDescriptors() const
     d.isQuantized = false;
     d.sampleType = OutputDescriptor::VariableSampleRate;
     d.hasDuration = false;
+    m_outputs[d.identifier] = list.size();
     list.push_back(d);
 
-    d.identifier = "curve";
-    d.name = "Shift Correlation Curve";
-    d.description = "Correlation between shifted and unshifted sources, for each probed shift in cents.";
+    d.identifier = "reffeature";
+    d.name = "Reference Feature";
+    d.description = "Chroma feature from reference audio.";
     d.unit = "";
     d.hasFixedBinCount = true;
-    d.binCount = 1;
-    d.hasKnownExtents = false;
-    d.isQuantized = false;
-    d.sampleType = OutputDescriptor::FixedSampleRate;
-    d.sampleRate = 100;
-    d.hasDuration = false;
-    list.push_back(d);
-
-    int targetBinMin = int(floor(targetFmin * m_blockSize / m_inputSampleRate));
-    int targetBinMax = int(ceil(targetFmax * m_blockSize / m_inputSampleRate));
-    cerr << "target bin range: " << targetBinMin << " -> " << targetBinMax << endl;
-
-    d.identifier = "averages";
-    d.name = "Spectrum averages";
-    d.description = "Average magnitude spectrum for each channel.";
-    d.unit = "";
-    d.hasFixedBinCount = true;
-    d.binCount = (targetBinMax > targetBinMin ? targetBinMax - targetBinMin + 1 : 100);
+    d.binCount = m_bpo;
     d.hasKnownExtents = false;
     d.isQuantized = false;
     d.sampleType = OutputDescriptor::FixedSampleRate;
     d.sampleRate = 1;
     d.hasDuration = false;
+    m_outputs[d.identifier] = list.size();
+    list.push_back(d);
+
+    d.identifier = "otherfeature";
+    d.name = "Other Feature";
+    d.description = "Chroma feature from other audio, before rotation.";
+    d.unit = "";
+    d.hasFixedBinCount = true;
+    d.binCount = m_bpo;
+    d.hasKnownExtents = false;
+    d.isQuantized = false;
+    d.sampleType = OutputDescriptor::FixedSampleRate;
+    d.sampleRate = 1;
+    d.hasDuration = false;
+    m_outputs[d.identifier] = list.size();
+    list.push_back(d);
+
+    d.identifier = "rotfeature";
+    d.name = "Other Feature at Rotated Frequency";
+    d.description = "Chroma feature from reference audio calculated with the tuning frequency obtained from rotation matching.";
+    d.unit = "";
+    d.hasFixedBinCount = true;
+    d.binCount = m_bpo;
+    d.hasKnownExtents = false;
+    d.isQuantized = false;
+    d.sampleType = OutputDescriptor::FixedSampleRate;
+    d.sampleRate = 1;
+    d.hasDuration = false;
+    m_outputs[d.identifier] = list.size();
     list.push_back(d);
 
     return list;
@@ -200,8 +228,7 @@ TuningDifference::initialise(size_t channels, size_t stepSize, size_t blockSize)
     if (channels < getMinChannelCount() ||
 	channels > getMaxChannelCount()) return false;
 
-    if (blockSize != getPreferredBlockSize() ||
-	stepSize != blockSize/2) return false;
+    if (stepSize != blockSize) return false;
 
     m_blockSize = blockSize;
 
@@ -213,141 +240,170 @@ TuningDifference::initialise(size_t channels, size_t stepSize, size_t blockSize)
 void
 TuningDifference::reset()
 {
-    m_sum[0].clear();
-    m_sum[1].clear();
-    m_frameCount = 0;
+    if (m_frameCount > 0) {
+	m_refCQ.reset(new CQSpectrogram(paramsForTuningFrequency(440.),
+					CQSpectrogram::InterpolateHold));
+	m_frameCount = 0;
+    }
+    m_refTotals = Chroma(m_refCQ->getTotalBins(), 0.0);
+    m_other.clear();
+}
+
+template<typename T>
+void addTo(vector<T> &a, const vector<T> &b)
+{
+    transform(a.begin(), a.end(), b.begin(), a.begin(), plus<T>());
+}
+
+template<typename T>
+T distance(const vector<T> &a, const vector<T> &b)
+{
+    return inner_product(a.begin(), a.end(), b.begin(), T(),
+			 plus<T>(), [](T x, T y) { return fabs(x - y); });
+}
+
+TuningDifference::TFeature
+TuningDifference::computeFeatureFromTotals(const Chroma &totals) const
+{
+    TFeature feature(m_bpo);
+    double sum = 0.0;
+    
+    for (int i = 0; i < (int)totals.size(); ++i) {
+	double value = totals[i] / m_frameCount;
+	feature[i % m_bpo] += value;
+	sum += value;
+    }
+
+    for (int i = 0; i < m_bpo; ++i) {
+	feature[i] /= sum;
+    }
+
+    cerr << "computeFeatureFromTotals: feature values:" << endl;
+    for (auto v: feature) cerr << v << " ";
+    cerr << endl;
+    
+    return feature;
+}
+
+CQParameters
+TuningDifference::paramsForTuningFrequency(double hz) const
+{
+    return CQParameters(m_inputSampleRate,
+			pitchToFrequency(36, hz),
+			pitchToFrequency(96, hz),
+			m_bpo);
+}
+
+TuningDifference::TFeature
+TuningDifference::computeFeatureFromSignal(const Signal &signal, double hz) const
+{
+    CQSpectrogram cq(paramsForTuningFrequency(hz),
+		     CQSpectrogram::InterpolateHold);
+
+    Chroma totals(m_refCQ->getTotalBins(), 0.0);
+    
+    for (int i = 0; i < m_frameCount; ++i) {
+	Signal::const_iterator first = signal.begin() + i * m_blockSize;
+	Signal::const_iterator last = first + m_blockSize;
+	if (last > signal.end()) last = signal.end();
+	CQSpectrogram::RealSequence input(first, last);
+	input.resize(m_blockSize);
+	CQSpectrogram::RealBlock block = cq.process(input);
+	for (const auto &v: block) addTo(totals, v);
+    }
+
+    return computeFeatureFromTotals(totals);
 }
 
 TuningDifference::FeatureSet
-TuningDifference::process(const float *const *inputBuffers, Vamp::RealTime timestamp)
+TuningDifference::process(const float *const *inputBuffers, Vamp::RealTime)
 {
-    for (int c = 0; c < 2; ++c) {
-	if (m_sum[c].size() == 0) {
-	    m_sum[c].resize(m_blockSize/2 + 1, 0.0);
-	}
-	for (int i = 0; i <= m_blockSize/2; ++i) {
-	    double energy =
-		inputBuffers[c][i*2  ] * inputBuffers[c][i*2  ] +
-		inputBuffers[c][i*2+1] * inputBuffers[c][i*2+1];
-	    double mag = sqrt(energy);
-	    m_sum[c][i] += mag;
-	    m_sum[c][i/2] += mag;
-	}
-    }
+    CQSpectrogram::RealBlock block;
+    CQSpectrogram::RealSequence input;
+
+    input = CQSpectrogram::RealSequence
+	(inputBuffers[0], inputBuffers[0] + m_blockSize);
+    block = m_refCQ->process(input);
+    for (const auto &v: block) addTo(m_refTotals, v);
+
+    m_other.insert(m_other.end(),
+		   inputBuffers[1], inputBuffers[1] + m_blockSize);
     
     ++m_frameCount;
     return FeatureSet();
 }
 
+double
+TuningDifference::featureDistance(const TFeature &other, int rotation) const
+{
+    if (rotation == 0) {
+	return distance(m_refFeature, other);
+    } else {
+	TFeature r(other);
+	if (rotation > 0) {
+	    rotate(r.begin(), r.begin() + rotation, r.end());
+	} else {
+	    rotate(r.begin(), r.end() + rotation, r.end());
+	}
+	return distance(m_refFeature, r);
+    }
+}
+
+int
+TuningDifference::findBestRotation(const TFeature &other) const
+{
+    map<double, int> dists;
+
+    int maxSemis = 6;
+    int maxRotation = (m_bpo * maxSemis) / 12;
+
+    for (int r = -maxRotation; r <= maxRotation; ++r) {
+	double dist = featureDistance(other, r);
+	dists[dist] = r;
+	cerr << "rotation " << r << ": score " << dist << endl;
+    }
+
+    int best = dists.begin()->second;
+
+    cerr << "best is " << best << endl;
+    return best;
+}
+
 TuningDifference::FeatureSet
 TuningDifference::getRemainingFeatures()
 {
-    int n = m_sum[0].size();
-    if (n == 0) return FeatureSet();
+    FeatureSet fs;
+    if (m_frameCount == 0) return fs;
+
+    m_refFeature = computeFeatureFromTotals(m_refTotals);
+    TFeature otherFeature = computeFeatureFromSignal(m_other, 440.);
 
     Feature f;
-    FeatureSet fs;
-
-    int maxshift = 2400; // cents
-
-    int bestshift = -1;
-    double bestdist = 0;
-
-    for (int i = 0; i < n; ++i) {
-	m_sum[0][i] /= m_frameCount;
-	m_sum[1][i] /= m_frameCount;
-    }
-
-    for (int c = 0; c < 2; ++c) {
-	double tot = 0.0;
-	for (int i = 0; i < n; ++i) {
-	    tot += m_sum[c][i];
-	}
-	if (tot != 0.0) {
-	    for (int i = 0; i < n; ++i) {
-		m_sum[c][i] /= tot;
-	    }
-	}
-    }
-
-    int targetBinMin = int(floor(targetFmin * m_blockSize / m_inputSampleRate));
-    int targetBinMax = int(ceil(targetFmax * m_blockSize / m_inputSampleRate));
-    cerr << "target bin range: " << targetBinMin << " -> " << targetBinMax << endl;
-	
-    f.values.clear();
-    for (int i = targetBinMin; i < targetBinMax; ++i) {
-	f.values.push_back(m_sum[0][i]);
-    }
-    fs[3].push_back(f);
-    f.values.clear();
-    for (int i = targetBinMin; i < targetBinMax; ++i) {
-	f.values.push_back(m_sum[1][i]);
-    }
-    fs[3].push_back(f);
 
     f.values.clear();
-    
-    for (int shift = -maxshift; shift <= maxshift; ++shift) {
-
-	double multiplier = pow(2.0, double(shift) / 1200.0);
-	double dist = 0.0;
-
-//	cerr << "shift = " << shift << ", multiplier = " << multiplier << endl;
-
-	int contributing = 0;
-	
-	for (int i = targetBinMin; i < targetBinMax; ++i) {
-
-	    double source = i / multiplier;
-	    int s0 = int(source), s1 = s0 + 1;
-	    double p1 = source - s0;
-	    double p0 = 1.0 - p1;
-
-	    double value = 0.0;
-	    if (s0 >= 0 && s0 < n) {
-		value += p0 * m_sum[1][s0];
-		++contributing;
-	    }
-	    if (s1 >= 0 && s1 < n) {
-		value += p1 * m_sum[1][s1];
-		++contributing;
-	    }
-
-//	    if (shift == -1) {
-//		cerr << "for multiplier " << multiplier << ", target " << i << ", source " << source << ", value " << p0 << " * " << m_sum[1][s0] << " + " << p1 << " * " << m_sum[1][s1] << " = " << value << ", other " << m_sum[0][i] << endl;
-//	    }
-	    
-	    double diff = fabs(m_sum[0][i] - value);
-	    dist += diff;
-	}
-
-	dist /= contributing;
-	
-	f.values.clear();
-	f.values.push_back(dist);
-	char label[100];
-	sprintf(label, "%f at shift %d freq mult %f", dist, shift, multiplier);
-	f.label = label;
-	fs[2].push_back(f);
-
-	if (bestshift == -1 || dist < bestdist) {
-	    bestshift = shift;
-	    bestdist = dist;
-	}
-    }
-
-    f.timestamp = Vamp::RealTime::zeroTime;
-    f.hasTimestamp = true;
-    f.label = "";
+    for (auto v: m_refFeature) f.values.push_back(v);
+    fs[m_outputs["reffeature"]].push_back(f);
 
     f.values.clear();
-//    cerr << "best dist = " << bestdist << " at shift " << bestshift << endl;
-    f.values.push_back(-bestshift);
-    fs[0].push_back(f);
+    for (auto v: otherFeature) f.values.push_back(v);
+    fs[m_outputs["otherfeature"]].push_back(f); 
+   
+    int rotation = findBestRotation(otherFeature);
+
+    int coarseCents = -(rotation * 100) / (m_bpo / 12);
+
+    cerr << "rotation " << rotation << " -> cents " << coarseCents << endl;
+
+    double coarseHz = frequencyForCentsAbove440(coarseCents);
+
+    TFeature coarseFeature = computeFeatureFromSignal(m_other, coarseHz);
+    double coarseScore = featureDistance(coarseFeature);
+
+    cerr << "corresponding Hz " << coarseHz << " scores " << coarseScore << endl;
 
     f.values.clear();
-    f.values.push_back(440.0 / pow(2.0, double(bestshift) / 1200.0));
-    fs[1].push_back(f);
+    for (auto v: coarseFeature) f.values.push_back(v);
+    fs[m_outputs["rotfeature"]].push_back(f);
     
     return fs;
 }

@@ -3,6 +3,10 @@
 
 #include <vamp-sdk/Plugin.h>
 
+#include <cq/CQSpectrogram.h>
+
+#include <memory>
+
 using std::string;
 using std::vector;
 
@@ -44,9 +48,25 @@ public:
     FeatureSet getRemainingFeatures();
 
 protected:
+    typedef vector<float> Signal;
+    typedef vector<double> Chroma;
+    typedef vector<double> TFeature;
+
+    int m_bpo;
+    std::unique_ptr<CQSpectrogram> m_refCQ;
+    Chroma m_refTotals;
+    TFeature m_refFeature;
+    Signal m_other;
     int m_blockSize;
-    vector<double> m_sum[2];
     int m_frameCount;
+
+    CQParameters paramsForTuningFrequency(double hz) const;
+    TFeature computeFeatureFromTotals(const Chroma &totals) const;
+    TFeature computeFeatureFromSignal(const Signal &signal, double hz) const;
+    double featureDistance(const TFeature &other, int rotation = 0) const;
+    int findBestRotation(const TFeature &other) const;
+
+    mutable std::map<string, int> m_outputs;
 };
 
 

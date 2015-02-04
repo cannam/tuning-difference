@@ -1,25 +1,16 @@
 
-##  Makefile for Vamp plugin using GNU tools on Linux.
-##
-##  Edit this to adjust compiler and library settings when
-##  building for Linux.
-##
-##  Note that the list of source files, etc, goes in Makefile.inc
-##  instead so that it can be included by all platform Makefiles.
-
-
 # For a debug build...
 
-CFLAGS		:= -Wall -Wextra -g -fPIC
+CXXFLAGS	:= -Wall -Wextra -Werror -g -fPIC -std=c++11
 
 # ... or for a release build
 
-#CFLAGS		:= -Wall -Wextra -O3 -msse -msse2 -mfpmath=sse -ftree-vectorize -fPIC
+#CXXFLAGS	:= -Wall -Wextra -Werror -O3 -msse -msse2 -mfpmath=sse -ftree-vectorize -fPIC -std=c++11
 
 
 # Location of Vamp plugin SDK relative to the project directory
 
-VAMPSDK_DIR	:= ../vamp-plugin-sdk
+VAMPSDK_DIR	:= ../../vamp-plugin-sdk
 
 
 # Libraries and linker flags required by plugin: add any -l<library>
