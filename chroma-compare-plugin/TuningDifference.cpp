@@ -26,7 +26,9 @@ static double frequencyForCentsAbove440(double cents)
 TuningDifference::TuningDifference(float inputSampleRate) :
     Plugin(inputSampleRate),
     m_bpo(60),
-    m_refChroma(new Chromagram(paramsForTuningFrequency(440.)))
+    m_refChroma(new Chromagram(paramsForTuningFrequency(440.))),
+    m_blockSize(0),
+    m_frameCount(0)
 {
 }
 
