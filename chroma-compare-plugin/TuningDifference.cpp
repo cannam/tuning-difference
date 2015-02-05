@@ -263,9 +263,11 @@ T distance(const vector<T> &a, const vector<T> &b)
 TuningDifference::TFeature
 TuningDifference::computeFeatureFromTotals(const TFeature &totals) const
 {
+    if (m_frameCount == 0) return totals;
+    
     TFeature feature(m_bpo);
     double sum = 0.0;
-    
+
     for (int i = 0; i < m_bpo; ++i) {
 	double value = totals[i] / m_frameCount;
 	feature[i] += value;
@@ -300,6 +302,8 @@ TuningDifference::computeFeatureFromSignal(const Signal &signal, double hz) cons
     Chromagram chromagram(paramsForTuningFrequency(hz));
 
     TFeature totals(m_bpo, 0.0);
+
+    cerr << "computeFeatureFromSignal: hz = " << hz << ", frame count = " << m_frameCount << endl;
     
     for (int i = 0; i < m_frameCount; ++i) {
 	Signal::const_iterator first = signal.begin() + i * m_blockSize;
@@ -372,6 +376,46 @@ TuningDifference::findBestRotation(const TFeature &other) const
     return best;
 }
 
+double
+TuningDifference::findFineFrequency(int coarseCents, double coarseScore)
+{
+    int coarseResolution = 1200 / m_bpo;
+    int searchDistance = coarseResolution/2 - 1;
+
+    double bestScore = coarseScore;
+    double bestHz = frequencyForCentsAbove440(coarseCents);
+
+    cerr << "corresponding coarse Hz " << bestHz << " scores " << coarseScore << endl;
+    cerr << "searchDistance = " << searchDistance << endl;
+    
+    for (int sign = -1; sign <= 1; sign += 2) {
+	for (int offset = 1; offset <= searchDistance; ++offset) {
+
+	    int fineCents = coarseCents + sign * offset;
+
+	    cerr << "trying with fineCents = " << fineCents << "..." << endl;
+	    
+	    double fineHz = frequencyForCentsAbove440(fineCents);
+	    TFeature fineFeature = computeFeatureFromSignal(m_other, fineHz);
+	    double fineScore = featureDistance(fineFeature);
+
+	    cerr << "fine offset = " << offset << ", cents = " << fineCents
+		 << ", Hz = " << fineHz << ", score " << fineScore
+		 << " (best score so far " << bestScore << ")" << endl;
+	    
+	    if (fineScore < bestScore) {
+		cerr << "is good!" << endl;
+		bestScore = fineScore;
+		bestHz = fineScore;
+	    } else {
+		break;
+	    }
+	}
+    }
+
+    return bestHz;
+}
+
 TuningDifference::FeatureSet
 TuningDifference::getRemainingFeatures()
 {
@@ -393,7 +437,7 @@ TuningDifference::getRemainingFeatures()
    
     int rotation = findBestRotation(otherFeature);
 
-    int coarseCents = -(rotation * 100) / (m_bpo / 12);
+    int coarseCents = -(rotation * 1200) / m_bpo;
 
     cerr << "rotation " << rotation << " -> cents " << coarseCents << endl;
 
@@ -407,6 +451,10 @@ TuningDifference::getRemainingFeatures()
     f.values.clear();
     for (auto v: coarseFeature) f.values.push_back(v);
     fs[m_outputs["rotfeature"]].push_back(f);
+
+    double fineHz = findFineFrequency(coarseCents, coarseScore);
+
+    cerr << "overall best Hz = " << fineHz << endl;
     
     return fs;
 }
