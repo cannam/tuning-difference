@@ -1,0 +1,21 @@
+
+TOOLPREFIX     ?= 
+CXX		= $(TOOLPREFIX)g++
+CC		= $(TOOLPREFIX)gcc
+LD		= $(TOOLPREFIX)g++
+AR		= $(TOOLPREFIX)ar
+RANLIB		= $(TOOLPREFIX)ranlib
+
+#CFLAGS		:= -Wall -Wextra -g
+
+CFLAGS		:= -Wall -Wextra -O3 -ftree-vectorize
+
+VAMPSDK_DIR	:= ../vamp-plugin-sdk
+
+PLUGIN_LDFLAGS	:= -shared -static -Wl,--retain-symbols-file=vamp-plugin.list $(VAMPSDK_DIR)/libvamp-sdk.a
+
+PLUGIN_EXT	:= .dll
+
+MAKEFILE_EXT  := .mingw32
+
+include Makefile.inc

@@ -1,7 +1,23 @@
+/* -*- c-basic-offset: 4 indent-tabs-mode: nil -*-  vi:set ts=8 sts=4 sw=4: */
+
+/*
+  Centre for Digital Music, Queen Mary University of London.
+    
+  This program is free software; you can redistribute it and/or
+  modify it under the terms of the GNU General Public License as
+  published by the Free Software Foundation; either version 2 of the
+  License, or (at your option) any later version.  See the file
+  COPYING included with this distribution for more information.
+*/
+
 #ifndef TUNING_DIFFERENCE_H
 #define TUNING_DIFFERENCE_H
 
 #include <vamp-sdk/Plugin.h>
+
+#include <cq/Chromagram.h>
+
+#include <memory>
 
 using std::string;
 using std::vector;
@@ -44,9 +60,25 @@ public:
     FeatureSet getRemainingFeatures();
 
 protected:
+    typedef vector<float> Signal;
+    typedef vector<double> TFeature;
+
+    int m_bpo;
+    std::unique_ptr<Chromagram> m_refChroma;
+    TFeature m_refTotals;
+    TFeature m_refFeature;
+    Signal m_other;
     int m_blockSize;
-    vector<double> m_sum[2];
     int m_frameCount;
+
+    Chromagram::Parameters paramsForTuningFrequency(double hz) const;
+    TFeature computeFeatureFromTotals(const TFeature &totals) const;
+    TFeature computeFeatureFromSignal(const Signal &signal, double hz) const;
+    double featureDistance(const TFeature &other, int rotation = 0) const;
+    int findBestRotation(const TFeature &other) const;
+    std::pair<int, double> findFineFrequency(int coarseCents, double coarseScore);
+
+    mutable std::map<string, int> m_outputs;
 };
 
 

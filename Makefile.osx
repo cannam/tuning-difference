@@ -1,0 +1,18 @@
+
+#CFLAGS		:= -Wall -Wextra -g -fPIC
+
+CFLAGS		:= -Wall -Wextra -O3 -ftree-vectorize -fPIC
+
+ARCHFLAGS	?= -mmacosx-version-min=10.6 -arch x86_64 -arch i386
+
+VAMPSDK_DIR	:= ../vamp-plugin-sdk
+
+PLUGIN_LDFLAGS	:= -dynamiclib -exported_symbols_list vamp-plugin.list $(VAMPSDK_DIR)/libvamp-sdk.a
+
+PLUGIN_EXT	:= .dylib
+
+MAKEFILE_EXT  := .osx
+
+include Makefile.inc
+
+

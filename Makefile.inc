@@ -5,11 +5,11 @@ PLUGIN_LIBRARY_NAME := tuning-difference
 
 # Edit this to list the .cpp or .c files in your plugin project
 #
-PLUGIN_SOURCES := TuningDifference.cpp plugins.cpp
+PLUGIN_SOURCES := src/TuningDifference.cpp src/plugins.cpp
 
 # Edit this to list the .h files in your plugin project
 #
-PLUGIN_HEADERS := TuningDifference.h
+PLUGIN_HEADERS := src/TuningDifference.h
 
 
 ##  Normally you should not edit anything below this line
@@ -17,9 +17,9 @@ PLUGIN_HEADERS := TuningDifference.h
 SRC_DIR		:= .
 
 CFLAGS		:= $(ARCHFLAGS) $(CFLAGS)
-CXXFLAGS	:= $(CFLAGS) -I. -I$(VAMPSDK_DIR) -I../../constant-q-cpp $(CXXFLAGS)
+CXXFLAGS	:= $(CFLAGS) -I. -I$(VAMPSDK_DIR) -Iconstant-q-cpp $(CXXFLAGS)
 
-LDFLAGS		:= $(ARCHFLAGS) $(LDFLAGS) -L../../constant-q-cpp -lcq
+LDFLAGS		:= $(ARCHFLAGS) $(LDFLAGS) -Lconstant-q-cpp -lcq
 PLUGIN_LDFLAGS	:= $(LDFLAGS) $(PLUGIN_LDFLAGS)
 
 # Defaults, overridden from the platform-specific Makefile
@@ -33,6 +33,12 @@ PLUGIN 		:= $(PLUGIN_LIBRARY_NAME)$(PLUGIN_EXT)
 PLUGIN_OBJECTS 	:= $(PLUGIN_SOURCES:.cpp=.o)
 PLUGIN_OBJECTS 	:= $(PLUGIN_OBJECTS:.c=.o)
 
+all: constant-q-cpp $(PLUGIN)
+
+.PHONY: constant-q-cpp
+constant-q-cpp: 
+	$(MAKE) -C $@ -f Makefile$(MAKEFILE_EXT) libcq.a
+
 $(PLUGIN): $(PLUGIN_OBJECTS) 
 	   $(CXX) -o $@ $^ $(PLUGIN_LDFLAGS)
 
@@ -40,6 +46,7 @@ $(PLUGIN_OBJECTS): $(PLUGIN_HEADERS)
 
 clean:
 	rm -f $(PLUGIN_OBJECTS)
+	$(MAKE) -C constant-q-cpp -f Makefile$(MAKEFILE_EXT) clean
 
 distclean:	clean
 	rm -f $(PLUGIN)
@@ -49,5 +56,5 @@ depend:
 
 # DO NOT DELETE
 
-TuningDifference.o: TuningDifference.h
-plugins.o: TuningDifference.h
+src/TuningDifference.o: src/TuningDifference.h
+src/plugins.o: src/TuningDifference.h
