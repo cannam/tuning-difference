@@ -64,7 +64,7 @@ protected:
     TFeature computeFeatureFromSignal(const Signal &signal, double hz) const;
     double featureDistance(const TFeature &other, int rotation = 0) const;
     int findBestRotation(const TFeature &other) const;
-    double findFineFrequency(int coarseCents, double coarseScore);
+    std::pair<int, double> findFineFrequency(int coarseCents, double coarseScore);
 
     mutable std::map<string, int> m_outputs;
 };

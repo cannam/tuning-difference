@@ -378,13 +378,14 @@ TuningDifference::findBestRotation(const TFeature &other) const
     return best;
 }
 
-double
+pair<int, double>
 TuningDifference::findFineFrequency(int coarseCents, double coarseScore)
 {
     int coarseResolution = 1200 / m_bpo;
     int searchDistance = coarseResolution/2 - 1;
 
     double bestScore = coarseScore;
+    int bestCents = coarseCents;
     double bestHz = frequencyForCentsAbove440(coarseCents);
 
     cerr << "corresponding coarse Hz " << bestHz << " scores " << coarseScore << endl;
@@ -408,6 +409,7 @@ TuningDifference::findFineFrequency(int coarseCents, double coarseScore)
 	    if (fineScore < bestScore) {
 		cerr << "is good!" << endl;
 		bestScore = fineScore;
+		bestCents = fineCents;
 		bestHz = fineHz;
 	    } else {
 		break;
@@ -415,7 +417,7 @@ TuningDifference::findFineFrequency(int coarseCents, double coarseScore)
 	}
     }
 
-    return bestHz;
+    return pair<int, double>(bestCents, bestHz);
 }
 
 TuningDifference::FeatureSet
@@ -450,12 +452,23 @@ TuningDifference::getRemainingFeatures()
 
     cerr << "corresponding Hz " << coarseHz << " scores " << coarseScore << endl;
 
+    //!!! This should be returning the fine chroma, not the coarse
     f.values.clear();
     for (auto v: coarseFeature) f.values.push_back(v);
     fs[m_outputs["rotfeature"]].push_back(f);
 
-    double fineHz = findFineFrequency(coarseCents, coarseScore);
+    pair<int, double> fine = findFineFrequency(coarseCents, coarseScore);
+    int fineCents = fine.first;
+    double fineHz = fine.second;
 
+    f.values.clear();
+    f.values.push_back(fineHz);
+    fs[m_outputs["tuningfreq"]].push_back(f);
+
+    f.values.clear();
+    f.values.push_back(fineCents);
+    fs[m_outputs["cents"]].push_back(f);
+    
     cerr << "overall best Hz = " << fineHz << endl;
     
     return fs;
