@@ -1,11 +1,11 @@
 
 # For a debug build...
 
-CXXFLAGS	:= -Wall -Wextra -Werror -g -fPIC -std=c++11
+#CXXFLAGS	:= -Wall -Wextra -Werror -g -fPIC -std=c++11
 
 # ... or for a release build
 
-#CXXFLAGS	:= -Wall -Wextra -Werror -O3 -msse -msse2 -mfpmath=sse -ftree-vectorize -fPIC -std=c++11
+CXXFLAGS	:= -Wall -Wextra -Werror -O3 -msse -msse2 -mfpmath=sse -ftree-vectorize -fPIC -std=c++11
 
 
 # Location of Vamp plugin SDK relative to the project directory

@@ -114,6 +114,8 @@ TuningDifference::ParameterList
 TuningDifference::getParameterDescriptors() const
 {
     ParameterList list;
+    //!!! parameter: max search range
+    //!!! parameter: fine search precision
     return list;
 }
 
@@ -292,9 +294,10 @@ TuningDifference::paramsForTuningFrequency(double hz) const
 {
     Chromagram::Parameters params(m_inputSampleRate);
     params.lowestOctave = 0;
-    params.octaves = 6;
-    params.bpo = m_bpo;
+    params.octaveCount = 6;
+    params.binsPerOctave = m_bpo;
     params.tuningFrequency = hz;
+    params.atomHopFactor = 0.5;
     return params;
 }
 
@@ -417,6 +420,8 @@ TuningDifference::findFineFrequency(int coarseCents, double coarseScore)
 	}
     }
 
+    //!!! could keep a vector of scores & then interpolate...
+    
     return pair<int, double>(bestCents, bestHz);
 }
 
