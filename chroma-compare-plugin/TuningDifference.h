@@ -3,7 +3,7 @@
 
 #include <vamp-sdk/Plugin.h>
 
-#include <cq/CQSpectrogram.h>
+#include <cq/Chromagram.h>
 
 #include <memory>
 
@@ -49,19 +49,18 @@ public:
 
 protected:
     typedef vector<float> Signal;
-    typedef vector<double> Chroma;
     typedef vector<double> TFeature;
 
     int m_bpo;
-    std::unique_ptr<CQSpectrogram> m_refCQ;
-    Chroma m_refTotals;
+    std::unique_ptr<Chromagram> m_refChroma;
+    TFeature m_refTotals;
     TFeature m_refFeature;
     Signal m_other;
     int m_blockSize;
     int m_frameCount;
 
-    CQParameters paramsForTuningFrequency(double hz) const;
-    TFeature computeFeatureFromTotals(const Chroma &totals) const;
+    Chromagram::Parameters paramsForTuningFrequency(double hz) const;
+    TFeature computeFeatureFromTotals(const TFeature &totals) const;
     TFeature computeFeatureFromSignal(const Signal &signal, double hz) const;
     double featureDistance(const TFeature &other, int rotation = 0) const;
     int findBestRotation(const TFeature &other) const;

@@ -26,8 +26,7 @@ static double frequencyForCentsAbove440(double cents)
 TuningDifference::TuningDifference(float inputSampleRate) :
     Plugin(inputSampleRate),
     m_bpo(60),
-    m_refCQ(new CQSpectrogram(paramsForTuningFrequency(440.),
-			      CQSpectrogram::InterpolateHold))
+    m_refChroma(new Chromagram(paramsForTuningFrequency(440.)))
 {
 }
 
@@ -241,11 +240,10 @@ void
 TuningDifference::reset()
 {
     if (m_frameCount > 0) {
-	m_refCQ.reset(new CQSpectrogram(paramsForTuningFrequency(440.),
-					CQSpectrogram::InterpolateHold));
+	m_refChroma.reset(new Chromagram(paramsForTuningFrequency(440.)));
 	m_frameCount = 0;
     }
-    m_refTotals = Chroma(m_refCQ->getTotalBins(), 0.0);
+    m_refTotals = TFeature(m_bpo, 0.0);
     m_other.clear();
 }
 
@@ -263,14 +261,14 @@ T distance(const vector<T> &a, const vector<T> &b)
 }
 
 TuningDifference::TFeature
-TuningDifference::computeFeatureFromTotals(const Chroma &totals) const
+TuningDifference::computeFeatureFromTotals(const TFeature &totals) const
 {
     TFeature feature(m_bpo);
     double sum = 0.0;
     
-    for (int i = 0; i < (int)totals.size(); ++i) {
+    for (int i = 0; i < m_bpo; ++i) {
 	double value = totals[i] / m_frameCount;
-	feature[i % m_bpo] += value;
+	feature[i] += value;
 	sum += value;
     }
 
@@ -285,30 +283,31 @@ TuningDifference::computeFeatureFromTotals(const Chroma &totals) const
     return feature;
 }
 
-CQParameters
+Chromagram::Parameters
 TuningDifference::paramsForTuningFrequency(double hz) const
 {
-    return CQParameters(m_inputSampleRate,
-			pitchToFrequency(36, hz),
-			pitchToFrequency(96, hz),
-			m_bpo);
+    Chromagram::Parameters params(m_inputSampleRate);
+    params.lowestOctave = 0;
+    params.octaves = 6;
+    params.bpo = m_bpo;
+    params.tuningFrequency = hz;
+    return params;
 }
 
 TuningDifference::TFeature
 TuningDifference::computeFeatureFromSignal(const Signal &signal, double hz) const
 {
-    CQSpectrogram cq(paramsForTuningFrequency(hz),
-		     CQSpectrogram::InterpolateHold);
+    Chromagram chromagram(paramsForTuningFrequency(hz));
 
-    Chroma totals(m_refCQ->getTotalBins(), 0.0);
+    TFeature totals(m_bpo, 0.0);
     
     for (int i = 0; i < m_frameCount; ++i) {
 	Signal::const_iterator first = signal.begin() + i * m_blockSize;
 	Signal::const_iterator last = first + m_blockSize;
 	if (last > signal.end()) last = signal.end();
-	CQSpectrogram::RealSequence input(first, last);
+	CQBase::RealSequence input(first, last);
 	input.resize(m_blockSize);
-	CQSpectrogram::RealBlock block = cq.process(input);
+	CQBase::RealBlock block = chromagram.process(input);
 	for (const auto &v: block) addTo(totals, v);
     }
 
@@ -318,12 +317,12 @@ TuningDifference::computeFeatureFromSignal(const Signal &signal, double hz) cons
 TuningDifference::FeatureSet
 TuningDifference::process(const float *const *inputBuffers, Vamp::RealTime)
 {
-    CQSpectrogram::RealBlock block;
-    CQSpectrogram::RealSequence input;
+    CQBase::RealBlock block;
+    CQBase::RealSequence input;
 
-    input = CQSpectrogram::RealSequence
+    input = CQBase::RealSequence
 	(inputBuffers[0], inputBuffers[0] + m_blockSize);
-    block = m_refCQ->process(input);
+    block = m_refChroma->process(input);
     for (const auto &v: block) addTo(m_refTotals, v);
 
     m_other.insert(m_other.end(),
@@ -339,11 +338,15 @@ TuningDifference::featureDistance(const TFeature &other, int rotation) const
     if (rotation == 0) {
 	return distance(m_refFeature, other);
     } else {
+	// A positive rotation pushes the tuning frequency up for this
+	// chroma, negative one pulls it down. If a positive rotation
+	// makes this chroma match an un-rotated reference, then this
+	// chroma must have initially been lower than the reference.
 	TFeature r(other);
-	if (rotation > 0) {
-	    rotate(r.begin(), r.begin() + rotation, r.end());
+	if (rotation < 0) {
+	    rotate(r.begin(), r.begin() - rotation, r.end());
 	} else {
-	    rotate(r.begin(), r.end() + rotation, r.end());
+	    rotate(r.begin(), r.end() - rotation, r.end());
 	}
 	return distance(m_refFeature, r);
     }
