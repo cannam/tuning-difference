@@ -406,7 +406,7 @@ TuningDifference::findFineFrequency(int coarseCents, double coarseScore)
 	    if (fineScore < bestScore) {
 		cerr << "is good!" << endl;
 		bestScore = fineScore;
-		bestHz = fineScore;
+		bestHz = fineHz;
 	    } else {
 		break;
 	    }
