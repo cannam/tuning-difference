@@ -19,6 +19,8 @@ feed it a single piece of music, you won't get anything worthwhile.
 
 Example usage:
 
+$ export VAMP_PATH=.  # if running from the build directory
+
 $ sonic-annotator -m -d vamp:tuning-difference:tuning-difference:tuningfreq PreludeInCMajorBWV846.mp3 BWV846Egarr.mp3 -w csv --csv-stdout --csv-omit-filename
 
 Here the first file is a MIDI rendering using a piano sample at 440Hz,

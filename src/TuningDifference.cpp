@@ -304,11 +304,12 @@ Chromagram::Parameters
 TuningDifference::paramsForTuningFrequency(double hz) const
 {
     Chromagram::Parameters params(m_inputSampleRate);
-    params.lowestOctave = 0;
-    params.octaveCount = 6;
+    params.lowestOctave = 2;
+    params.octaveCount = 4;
     params.binsPerOctave = m_bpo;
     params.tuningFrequency = hz;
     params.atomHopFactor = 0.5;
+    params.window = CQParameters::Hann;
     return params;
 }
 
@@ -463,7 +464,12 @@ TuningDifference::getRemainingFeatures()
 
     double coarseHz = frequencyForCentsAbove440(coarseCents);
 
-    TFeature coarseFeature = computeFeatureFromSignal(m_other, coarseHz);
+    TFeature coarseFeature;
+    if (rotation == 0) {
+        coarseFeature = otherFeature;
+    } else {
+        coarseFeature = computeFeatureFromSignal(m_other, coarseHz);
+    }
     double coarseScore = featureDistance(coarseFeature);
 
     cerr << "corresponding Hz " << coarseHz << " scores " << coarseScore << endl;
