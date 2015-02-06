@@ -293,9 +293,9 @@ TuningDifference::computeFeatureFromTotals(const TFeature &totals) const
 	feature[i] /= sum;
     }
 
-    cerr << "computeFeatureFromTotals: feature values:" << endl;
-    for (auto v: feature) cerr << v << " ";
-    cerr << endl;
+//    cerr << "computeFeatureFromTotals: feature values:" << endl;
+//    for (auto v: feature) cerr << v << " ";
+//    cerr << endl;
     
     return feature;
 }
@@ -384,12 +384,12 @@ TuningDifference::findBestRotation(const TFeature &other) const
     for (int r = -maxRotation; r <= maxRotation; ++r) {
 	double dist = featureDistance(other, r);
 	dists[dist] = r;
-	cerr << "rotation " << r << ": score " << dist << endl;
+//	cerr << "rotation " << r << ": score " << dist << endl;
     }
 
     int best = dists.begin()->second;
 
-    cerr << "best is " << best << endl;
+//    cerr << "best is " << best << endl;
     return best;
 }
 
