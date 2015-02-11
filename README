@@ -10,7 +10,9 @@ where A is tuned more than a semitone below 440Hz.
 
 The reference recording could be another performance at known pitch
 or, for example, a MIDI rendering at 440Hz. The two recordings must be
-in the same key.
+in the same key, although I suppose you could also interpret this
+plugin as finding the pitch difference of any transposition between
+the two recordings' keys plus any underlying tuning difference.
 
 The plugin expects to receive the two different recordings of the same
 piece of music as its two channels of input. (You can provide these
