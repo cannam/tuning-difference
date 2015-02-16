@@ -1,11 +1,12 @@
 
+
 #CXXFLAGS	:= -Wall -Wextra -Werror -g -fPIC -std=c++11
 
 CXXFLAGS	:= -Wall -Wextra -Werror -O3 -msse -msse2 -mfpmath=sse -ftree-vectorize -fPIC -std=c++11
 
 VAMPSDK_DIR	:= ../vamp-plugin-sdk
 
-PLUGIN_LDFLAGS	:= -shared -Wl,-Bsymbolic -Wl,-z,defs -Wl,--version-script=vamp-plugin.map $(VAMPSDK_DIR)/libvamp-sdk.a
+PLUGIN_LDFLAGS	:= -shared -Wl,-Bsymbolic -Wl,-z,defs -Wl,--version-script=vamp-plugin.map -L$(VAMPSDK_DIR) -Wl,-Bstatic -lvamp-sdk -Wl,-Bdynamic
 
 PLUGIN_EXT	:= .so
 
