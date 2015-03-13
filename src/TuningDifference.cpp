@@ -127,6 +127,7 @@ TuningDifference::getParameterDescriptors() const
     ParameterList list;
     //!!! parameter: max search range
     //!!! parameter: fine search precision
+    //!!! parameter: max total duration to listen to
     return list;
 }
 
