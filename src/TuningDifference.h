@@ -70,6 +70,7 @@ protected:
     Signal m_other;
     int m_blockSize;
     int m_frameCount;
+    float m_maxDuration;
 
     Chromagram::Parameters paramsForTuningFrequency(double hz) const;
     TFeature computeFeatureFromTotals(const TFeature &totals) const;

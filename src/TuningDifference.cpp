@@ -34,12 +34,15 @@ static double frequencyForCentsAbove440(double cents)
     return pitchToFrequency(69, cents, 440.);
 }
 
+static float defaultMaxDuration = 0;
+
 TuningDifference::TuningDifference(float inputSampleRate) :
     Plugin(inputSampleRate),
     m_bpo(60),
     m_refChroma(new Chromagram(paramsForTuningFrequency(440.))),
     m_blockSize(0),
-    m_frameCount(0)
+    m_frameCount(0),
+    m_maxDuration(defaultMaxDuration)
 {
 }
 
@@ -125,21 +128,40 @@ TuningDifference::ParameterList
 TuningDifference::getParameterDescriptors() const
 {
     ParameterList list;
+
+    ParameterDescriptor desc;
+
+    desc.identifier = "maxduration";
+    desc.name = "Maximum duration to analyse";
+    desc.description = "The maximum duration (in seconds) to consider from either input file. Zero means there is no limit.";
+    desc.minValue = 0;
+    desc.maxValue = 3600;
+    desc.defaultValue = defaultMaxDuration;
+    desc.isQuantized = false;
+    desc.unit = "s";
+    list.push_back(desc);
+    
     //!!! parameter: max search range
     //!!! parameter: fine search precision
-    //!!! parameter: max total duration to listen to
+
     return list;
 }
 
 float
-TuningDifference::getParameter(string) const
+TuningDifference::getParameter(string id) const
 {
+    if (id == "maxduration") {
+        return m_maxDuration;
+    }
     return 0;
 }
 
 void
-TuningDifference::setParameter(string, float) 
+TuningDifference::setParameter(string id, float value) 
 {
+    if (id == "maxduration") {
+        m_maxDuration = value;
+    }
 }
 
 TuningDifference::ProgramList
@@ -339,6 +361,11 @@ TuningDifference::computeFeatureFromSignal(const Signal &signal, double hz) cons
 TuningDifference::FeatureSet
 TuningDifference::process(const float *const *inputBuffers, Vamp::RealTime)
 {
+    if (m_maxDuration > 0) {
+        int maxFrames = (m_maxDuration * m_inputSampleRate) / m_blockSize;
+        if (m_frameCount > maxFrames) return FeatureSet();
+    }
+    
     CQBase::RealBlock block;
     CQBase::RealSequence input;
 
