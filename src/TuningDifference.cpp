@@ -475,6 +475,8 @@ TuningDifference::getRemainingFeatures()
     TFeature otherFeature = computeFeatureFromSignal(m_other, 440.);
 
     Feature f;
+    f.hasTimestamp = true;
+    f.timestamp = Vamp::RealTime::zeroTime;
 
     f.values.clear();
     for (auto v: m_refFeature) f.values.push_back(v);
