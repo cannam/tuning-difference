@@ -406,7 +406,7 @@ TuningDifference::findBestRotation(const TFeature &other) const
 {
     map<double, int> dists;
 
-    int maxSemis = 6;
+    int maxSemis = 4;
     int maxRotation = (m_bpo * maxSemis) / 12;
 
     for (int r = -maxRotation; r <= maxRotation; ++r) {
