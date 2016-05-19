@@ -143,7 +143,7 @@ TuningDifference::getParameterDescriptors() const
     
     //!!! parameter: max search range
     //!!! parameter: fine search precision
-
+    //!!! parameter: max amount of audio to listen to
     return list;
 }
 
