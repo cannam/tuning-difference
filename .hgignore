@@ -1,0 +1,8 @@
+syntax: glob
+*.o
+*.so
+*.dll
+*.dylib
+*~
+*.bak
+*.orig

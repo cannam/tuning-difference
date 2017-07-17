@@ -67,14 +67,14 @@ string
 TuningDifference::getDescription() const
 {
     // Return something helpful here!
-    return "";
+    return "Estimate the tuning frequency of a recording, by comparing it to another recording of the same music whose tuning frequency is known";
 }
 
 string
 TuningDifference::getMaker() const
 {
     // Your name here
-    return "";
+    return "Chris Cannam";
 }
 
 int
@@ -92,7 +92,7 @@ TuningDifference::getCopyright() const
     // need to say who made the plugin -- getMaker does that -- but it
     // should indicate the terms under which it is distributed.  For
     // example, "Copyright (year). All Rights Reserved", or "GPL"
-    return "";
+    return "GPL";
 }
 
 TuningDifference::InputDomain
