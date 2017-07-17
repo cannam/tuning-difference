@@ -18,6 +18,7 @@
 #include <cstdio>
 
 #include <algorithm>
+#include <numeric>
 
 using namespace std;
 
