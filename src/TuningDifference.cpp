@@ -16,6 +16,7 @@
 
 #include <cmath>
 #include <cstdio>
+#include <climits>
 
 #include <algorithm>
 #include <numeric>
@@ -199,7 +200,7 @@ TuningDifference::getOutputDescriptors() const
     d.isQuantized = false;
     d.sampleType = OutputDescriptor::VariableSampleRate;
     d.hasDuration = false;
-    m_outputs[d.identifier] = list.size();
+    m_outputs[d.identifier] = int(list.size());
     list.push_back(d);
 
     d.identifier = "tuningfreq";
@@ -212,7 +213,7 @@ TuningDifference::getOutputDescriptors() const
     d.isQuantized = false;
     d.sampleType = OutputDescriptor::VariableSampleRate;
     d.hasDuration = false;
-    m_outputs[d.identifier] = list.size();
+    m_outputs[d.identifier] = int(list.size());
     list.push_back(d);
 
     d.identifier = "reffeature";
@@ -226,7 +227,7 @@ TuningDifference::getOutputDescriptors() const
     d.sampleType = OutputDescriptor::FixedSampleRate;
     d.sampleRate = 1;
     d.hasDuration = false;
-    m_outputs[d.identifier] = list.size();
+    m_outputs[d.identifier] = int(list.size());
     list.push_back(d);
 
     d.identifier = "otherfeature";
@@ -240,7 +241,7 @@ TuningDifference::getOutputDescriptors() const
     d.sampleType = OutputDescriptor::FixedSampleRate;
     d.sampleRate = 1;
     d.hasDuration = false;
-    m_outputs[d.identifier] = list.size();
+    m_outputs[d.identifier] = int(list.size());
     list.push_back(d);
 
     d.identifier = "rotfeature";
@@ -254,7 +255,7 @@ TuningDifference::getOutputDescriptors() const
     d.sampleType = OutputDescriptor::FixedSampleRate;
     d.sampleRate = 1;
     d.hasDuration = false;
-    m_outputs[d.identifier] = list.size();
+    m_outputs[d.identifier] = int(list.size());
     list.push_back(d);
 
     return list;
@@ -267,8 +268,9 @@ TuningDifference::initialise(size_t channels, size_t stepSize, size_t blockSize)
 	channels > getMaxChannelCount()) return false;
 
     if (stepSize != blockSize) return false;
+    if (m_blockSize > INT_MAX) return false;
 
-    m_blockSize = blockSize;
+    m_blockSize = int(blockSize);
 
     reset();
     
@@ -363,7 +365,8 @@ TuningDifference::FeatureSet
 TuningDifference::process(const float *const *inputBuffers, Vamp::RealTime)
 {
     if (m_maxDuration > 0) {
-        int maxFrames = (m_maxDuration * m_inputSampleRate) / m_blockSize;
+        int maxFrames = int((m_maxDuration * m_inputSampleRate) /
+                            float(m_blockSize));
         if (m_frameCount > maxFrames) return FeatureSet();
     }
     
@@ -480,11 +483,11 @@ TuningDifference::getRemainingFeatures()
     f.timestamp = Vamp::RealTime::zeroTime;
 
     f.values.clear();
-    for (auto v: m_refFeature) f.values.push_back(v);
+    for (auto v: m_refFeature) f.values.push_back(float(v));
     fs[m_outputs["reffeature"]].push_back(f);
 
     f.values.clear();
-    for (auto v: otherFeature) f.values.push_back(v);
+    for (auto v: otherFeature) f.values.push_back(float(v));
     fs[m_outputs["otherfeature"]].push_back(f); 
    
     int rotation = findBestRotation(otherFeature);
@@ -507,7 +510,7 @@ TuningDifference::getRemainingFeatures()
 
     //!!! This should be returning the fine chroma, not the coarse
     f.values.clear();
-    for (auto v: coarseFeature) f.values.push_back(v);
+    for (auto v: coarseFeature) f.values.push_back(float(v));
     fs[m_outputs["rotfeature"]].push_back(f);
 
     pair<int, double> fine = findFineFrequency(coarseCents, coarseScore);
@@ -515,11 +518,11 @@ TuningDifference::getRemainingFeatures()
     double fineHz = fine.second;
 
     f.values.clear();
-    f.values.push_back(fineHz);
+    f.values.push_back(float(fineHz));
     fs[m_outputs["tuningfreq"]].push_back(f);
 
     f.values.clear();
-    f.values.push_back(fineCents);
+    f.values.push_back(float(fineCents));
     fs[m_outputs["cents"]].push_back(f);
     
     cerr << "overall best Hz = " << fineHz << endl;
