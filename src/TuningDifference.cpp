@@ -36,7 +36,8 @@ static double frequencyForCentsAbove440(double cents)
     return pitchToFrequency(69, cents, 440.);
 }
 
-static float defaultMaxDuration = 0;
+static float defaultMaxDuration = 0.f;
+static int defaultMaxSemis = 4;
 
 TuningDifference::TuningDifference(float inputSampleRate) :
     Plugin(inputSampleRate),
@@ -44,7 +45,8 @@ TuningDifference::TuningDifference(float inputSampleRate) :
     m_refChroma(new Chromagram(paramsForTuningFrequency(440.))),
     m_blockSize(0),
     m_frameCount(0),
-    m_maxDuration(defaultMaxDuration)
+    m_maxDuration(defaultMaxDuration),
+    m_maxSemis(defaultMaxSemis)
 {
 }
 
@@ -67,7 +69,6 @@ TuningDifference::getName() const
 string
 TuningDifference::getDescription() const
 {
-    // Return something helpful here!
     return "Estimate the tuning frequency of a recording, by comparing it to another recording of the same music whose tuning frequency is known";
 }
 
@@ -143,9 +144,17 @@ TuningDifference::getParameterDescriptors() const
     desc.unit = "s";
     list.push_back(desc);
     
-    //!!! parameter: max search range
-    //!!! parameter: fine search precision
-    //!!! parameter: max amount of audio to listen to
+    desc.identifier = "maxrange";
+    desc.name = "Maximum range in semitones";
+    desc.description = "The maximum difference in semitones that will be searched.";
+    desc.minValue = 1;
+    desc.maxValue = 11;
+    desc.defaultValue = defaultMaxSemis;
+    desc.isQuantized = true;
+    desc.quantizeStep = 1;
+    desc.unit = "semitones";
+    list.push_back(desc);
+
     return list;
 }
 
@@ -410,8 +419,7 @@ TuningDifference::findBestRotation(const TFeature &other) const
 {
     map<double, int> dists;
 
-    int maxSemis = 4;
-    int maxRotation = (m_bpo * maxSemis) / 12;
+    int maxRotation = (m_bpo * m_maxSemis) / 12;
 
     for (int r = -maxRotation; r <= maxRotation; ++r) {
 	double dist = featureDistance(other, r);
