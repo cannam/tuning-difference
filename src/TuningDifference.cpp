@@ -38,6 +38,7 @@ static double frequencyForCentsAbove440(double cents)
 
 static float defaultMaxDuration = 0.f;
 static int defaultMaxSemis = 4;
+static bool defaultFineTuning = true;
 
 TuningDifference::TuningDifference(float inputSampleRate) :
     Plugin(inputSampleRate),
@@ -46,7 +47,8 @@ TuningDifference::TuningDifference(float inputSampleRate) :
     m_blockSize(0),
     m_frameCount(0),
     m_maxDuration(defaultMaxDuration),
-    m_maxSemis(defaultMaxSemis)
+    m_maxSemis(defaultMaxSemis),
+    m_fineTuning(defaultFineTuning)
 {
 }
 
@@ -84,7 +86,7 @@ TuningDifference::getPluginVersion() const
 {
     // Increment this each time you release a version that behaves
     // differently from the previous one
-    return 1;
+    return 2;
 }
 
 string
@@ -136,7 +138,7 @@ TuningDifference::getParameterDescriptors() const
 
     desc.identifier = "maxduration";
     desc.name = "Maximum duration to analyse";
-    desc.description = "The maximum duration (in seconds) to consider from either input file. Zero means there is no limit.";
+    desc.description = "The maximum duration (in seconds) to consider from either input file, always taken from the start of the input. Zero means there is no limit.";
     desc.minValue = 0;
     desc.maxValue = 3600;
     desc.defaultValue = defaultMaxDuration;
@@ -154,6 +156,17 @@ TuningDifference::getParameterDescriptors() const
     desc.quantizeStep = 1;
     desc.unit = "semitones";
     list.push_back(desc);
+    
+    desc.identifier = "finetuning";
+    desc.name = "Fine tuning";
+    desc.description = "Use a fine tuning stage to increase nominal resolution from 20 cents to 1 cent.";
+    desc.minValue = 0;
+    desc.maxValue = 1;
+    desc.defaultValue = (defaultFineTuning ? 1.f : 0.f);
+    desc.isQuantized = true;
+    desc.quantizeStep = 1;
+    desc.unit = "";
+    list.push_back(desc);
 
     return list;
 }
@@ -163,6 +176,10 @@ TuningDifference::getParameter(string id) const
 {
     if (id == "maxduration") {
         return m_maxDuration;
+    } else if (id == "maxrange") {
+        return float(m_maxSemis);
+    } else if (id == "finetuning") {
+        return m_fineTuning ? 1.f : 0.f;
     }
     return 0;
 }
@@ -172,6 +189,10 @@ TuningDifference::setParameter(string id, float value)
 {
     if (id == "maxduration") {
         m_maxDuration = value;
+    } else if (id == "maxrange") {
+        m_maxSemis = int(roundf(value));
+    } else if (id == "finetuning") {
+        m_fineTuning = (value > 0.5f);
     }
 }
 
@@ -443,6 +464,11 @@ TuningDifference::findFineFrequency(int coarseCents, double coarseScore)
     int bestCents = coarseCents;
     double bestHz = frequencyForCentsAbove440(coarseCents);
 
+    if (!m_fineTuning) {
+        cerr << "fine tuning disabled, returning coarse Hz " << bestHz << " and cents " << bestCents << " in lieu of fine ones" << endl;
+        return pair<int, double>(bestCents, bestHz);
+    }
+    
     cerr << "corresponding coarse Hz " << bestHz << " scores " << coarseScore << endl;
     cerr << "searchDistance = " << searchDistance << endl;
     

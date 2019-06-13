@@ -72,6 +72,7 @@ protected:
     int m_frameCount;
     float m_maxDuration;
     int m_maxSemis;
+    bool m_fineTuning;
 
     Chromagram::Parameters paramsForTuningFrequency(double hz) const;
     TFeature computeFeatureFromTotals(const TFeature &totals) const;
