@@ -42,7 +42,7 @@ static bool defaultFineTuning = true;
 
 TuningDifference::TuningDifference(float inputSampleRate) :
     Plugin(inputSampleRate),
-    m_bpo(60),
+    m_bpo(120),
     m_refChroma(new Chromagram(paramsForTuningFrequency(440.))),
     m_blockSize(0),
     m_frameCount(0),
@@ -86,7 +86,7 @@ TuningDifference::getPluginVersion() const
 {
     // Increment this each time you release a version that behaves
     // differently from the previous one
-    return 2;
+    return 3;
 }
 
 string
@@ -159,7 +159,7 @@ TuningDifference::getParameterDescriptors() const
     
     desc.identifier = "finetuning";
     desc.name = "Fine tuning";
-    desc.description = "Use a fine tuning stage to increase nominal resolution from 20 cents to 1 cent.";
+    desc.description = "Use a fine tuning stage to increase nominal resolution from 10 cents to 1 cent.";
     desc.minValue = 0;
     desc.maxValue = 1;
     desc.defaultValue = (defaultFineTuning ? 1.f : 0.f);
@@ -415,6 +415,16 @@ TuningDifference::process(const float *const *inputBuffers, Vamp::RealTime)
     return FeatureSet();
 }
 
+void
+TuningDifference::rotateFeature(TFeature &r, int rotation) const
+{
+    if (rotation < 0) {
+        rotate(r.begin(), r.begin() - rotation, r.end());
+    } else {
+        rotate(r.begin(), r.end() - rotation, r.end());
+    }
+}
+
 double
 TuningDifference::featureDistance(const TFeature &other, int rotation) const
 {
@@ -426,11 +436,7 @@ TuningDifference::featureDistance(const TFeature &other, int rotation) const
 	// makes this chroma match an un-rotated reference, then this
 	// chroma must have initially been lower than the reference.
 	TFeature r(other);
-	if (rotation < 0) {
-	    rotate(r.begin(), r.begin() - rotation, r.end());
-	} else {
-	    rotate(r.begin(), r.end() - rotation, r.end());
-	}
+        rotateFeature(r, rotation);
 	return distance(m_refFeature, r);
     }
 }
@@ -455,12 +461,11 @@ TuningDifference::findBestRotation(const TFeature &other) const
 }
 
 pair<int, double>
-TuningDifference::findFineFrequency(int coarseCents, double coarseScore)
+TuningDifference::findFineFrequency(int coarseCents)
 {
     int coarseResolution = 1200 / m_bpo;
     int searchDistance = coarseResolution/2 - 1;
 
-    double bestScore = coarseScore;
     int bestCents = coarseCents;
     double bestHz = frequencyForCentsAbove440(coarseCents);
 
@@ -469,11 +474,20 @@ TuningDifference::findFineFrequency(int coarseCents, double coarseScore)
         return pair<int, double>(bestCents, bestHz);
     }
     
-    cerr << "corresponding coarse Hz " << bestHz << " scores " << coarseScore << endl;
+    //!!! This is kind of absurd - all this brute force but all we're
+    //!!! really doing is aligning two very short signals at
+    //!!! sub-sample level - let's rewrite it someday
+    
+    cerr << "findFineFrequency: coarse frequency is " << bestHz << endl;
     cerr << "searchDistance = " << searchDistance << endl;
+
+    double bestScore = 0;
+    bool firstScore = true;
     
     for (int sign = -1; sign <= 1; sign += 2) {
-	for (int offset = 1; offset <= searchDistance; ++offset) {
+	for (int offset = (sign < 0 ? 0 : 1);
+             offset <= searchDistance;
+             ++offset) {
 
 	    int fineCents = coarseCents + sign * offset;
 
@@ -487,11 +501,12 @@ TuningDifference::findFineFrequency(int coarseCents, double coarseScore)
 		 << ", Hz = " << fineHz << ", score " << fineScore
 		 << " (best score so far " << bestScore << ")" << endl;
 	    
-	    if (fineScore < bestScore) {
+	    if ((fineScore < bestScore) || firstScore) {
 		cerr << "is good!" << endl;
 		bestScore = fineScore;
 		bestCents = fineCents;
 		bestHz = fineHz;
+                firstScore = false;
 	    } else {
 		break;
 	    }
@@ -530,24 +545,17 @@ TuningDifference::getRemainingFeatures()
 
     cerr << "rotation " << rotation << " -> cents " << coarseCents << endl;
 
-    double coarseHz = frequencyForCentsAbove440(coarseCents);
-
-    TFeature coarseFeature;
-    if (rotation == 0) {
-        coarseFeature = otherFeature;
-    } else {
-        coarseFeature = computeFeatureFromSignal(m_other, coarseHz);
+    TFeature coarseFeature = otherFeature;
+    if (rotation != 0) {
+        rotateFeature(coarseFeature, rotation);
     }
-    double coarseScore = featureDistance(coarseFeature);
-
-    cerr << "corresponding Hz " << coarseHz << " scores " << coarseScore << endl;
 
     //!!! This should be returning the fine chroma, not the coarse
     f.values.clear();
     for (auto v: coarseFeature) f.values.push_back(float(v));
     fs[m_outputs["rotfeature"]].push_back(f);
 
-    pair<int, double> fine = findFineFrequency(coarseCents, coarseScore);
+    pair<int, double> fine = findFineFrequency(coarseCents);
     int fineCents = fine.first;
     double fineHz = fine.second;
 

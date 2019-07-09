@@ -77,9 +77,10 @@ protected:
     Chromagram::Parameters paramsForTuningFrequency(double hz) const;
     TFeature computeFeatureFromTotals(const TFeature &totals) const;
     TFeature computeFeatureFromSignal(const Signal &signal, double hz) const;
+    void rotateFeature(TFeature &feature, int rotation) const;
     double featureDistance(const TFeature &other, int rotation = 0) const;
     int findBestRotation(const TFeature &other) const;
-    std::pair<int, double> findFineFrequency(int coarseCents, double coarseScore);
+    std::pair<int, double> findFineFrequency(int coarseCents);
 
     mutable std::map<string, int> m_outputs;
 };

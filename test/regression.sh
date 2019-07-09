@@ -7,8 +7,6 @@ mydir=$(dirname "$0")
 source_url=https://code.soundsoftware.ac.uk/attachments/download/1698/Zweieck-Duell.ogg
 
 testfile="$mydir/input.ogg"
-outfile="$mydir/output.csv"
-expfile="$mydir/expected.csv"
 
 if sonic-annotator -v >/dev/null ; then
     :
@@ -45,26 +43,41 @@ oggdec -o "$wavfile" "$testfile"
 rubberband -p -2.34 "$wavfile" "$lowfile"
 
 VAMP_PATH="$mydir/.." \
+         time \
 	 sonic-annotator \
-	 -d vamp:tuning-difference:tuning-difference \
+	 -d vamp:tuning-difference:tuning-difference:cents \
+	 -d vamp:tuning-difference:tuning-difference:tuningfreq \
+	 -d vamp:tuning-difference:tuning-difference:rotfeature \
 	 -w csv \
 	 --csv-omit-filename \
-	 --csv-one-file "$outfile" \
+         --csv-basedir "$mydir/output" \
 	 --csv-force \
          --multiplex \
 	 "$testfile" \
 	 "$lowfile"
 
-if cmp "$outfile" "$expfile" ; then
-    echo 
-    echo PASS
-    exit 0
-else
-    echo
-    echo "*** FAIL: Result does not match expected output. Diff follows:"
-    echo
-    sdiff -w 60 "$outfile" "$expfile"
+failed=""
+
+for expected in "$mydir"/expected/*.csv ; do
+    outfile="$mydir"/output/$(basename $expected)
+    if cmp "$outfile" "$expected" ; then
+        echo "PASS: $outfile"
+    else
+        echo
+        echo "*** FAIL: Result does not match expected output. Diff follows:"
+        echo
+        sdiff -w 60 "$outfile" "$expected"
+        echo
+        failed="$failed $outfile"
+    fi
+done
+
+if [ -n "$failed" ]; then
+    echo "Some tests failed: $failed"
     exit 1
+else
+    echo "All tests passed"
+    exit 0
 fi
 
 
