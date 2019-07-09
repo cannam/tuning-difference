@@ -5,11 +5,11 @@ PLUGIN_LIBRARY_NAME := tuning-difference
 
 # Edit this to list the .cpp or .c files in your plugin project
 #
-PLUGIN_SOURCES := src/TuningDifference.cpp src/plugins.cpp
+PLUGIN_SOURCES := src/TuningDifference.cpp src/BulkTuningDifference.cpp src/plugins.cpp
 
 # Edit this to list the .h files in your plugin project
 #
-PLUGIN_HEADERS := src/TuningDifference.h
+PLUGIN_HEADERS := src/TuningDifference.h src/BulkTuningDifference.h
 
 
 ##  Normally you should not edit anything below this line
@@ -43,6 +43,9 @@ $(PLUGIN): $(PLUGIN_OBJECTS)
 	   $(CXX) -o $@ $^ $(PLUGIN_LDFLAGS)
 
 $(PLUGIN_OBJECTS): $(PLUGIN_HEADERS)
+
+test:	$(PLUGIN)
+	bash test/regression.sh
 
 clean:
 	rm -f $(PLUGIN_OBJECTS)

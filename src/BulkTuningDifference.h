@@ -10,21 +10,23 @@
   COPYING included with this distribution for more information.
 */
 
-#ifndef TUNING_DIFFERENCE_H
-#define TUNING_DIFFERENCE_H
+#ifndef BULK_TUNING_DIFFERENCE_H
+#define BULK_TUNING_DIFFERENCE_H
 
-// This plugin is a thin wrapper around a BulkTuningDifference with
-// only two channels
-#include "BulkTuningDifference.h"
+#include <vamp-sdk/Plugin.h>
+
+#include <cq/Chromagram.h>
+
+#include <memory>
 
 using std::string;
 using std::vector;
 
-class TuningDifference : public Vamp::Plugin
+class BulkTuningDifference : public Vamp::Plugin
 {
 public:
-    TuningDifference(float inputSampleRate);
-    virtual ~TuningDifference();
+    BulkTuningDifference(float inputSampleRate);
+    virtual ~BulkTuningDifference();
 
     string getIdentifier() const;
     string getName() const;
@@ -58,9 +60,32 @@ public:
     FeatureSet getRemainingFeatures();
 
 protected:
-    BulkTuningDifference m_bulk;
+    typedef vector<float> Signal;
+    typedef vector<double> TFeature;
+
+    int m_channelCount;
+    int m_bpo;
+    std::unique_ptr<Chromagram> m_refChroma;
+    TFeature m_refTotals;
+    TFeature m_refFeature;
+    std::vector<Signal> m_others;
+    int m_blockSize;
+    int m_frameCount;
+    float m_maxDuration;
+    int m_maxSemis;
+    bool m_fineTuning;
+
+    Chromagram::Parameters paramsForTuningFrequency(double hz) const;
+    TFeature computeFeatureFromTotals(const TFeature &totals) const;
+    TFeature computeFeatureFromSignal(const Signal &signal, double hz) const;
+    void rotateFeature(TFeature &feature, int rotation) const;
+    double featureDistance(const TFeature &other, int rotation = 0) const;
+    int findBestRotation(const TFeature &other) const;
+    std::pair<int, double> findFineFrequency(int channel, int coarseCents);
+    void getRemainingFeaturesForChannel(int channel, FeatureSet &fs);
 
     mutable std::map<string, int> m_outputs;
 };
+
 
 #endif

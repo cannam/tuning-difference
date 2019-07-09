@@ -3,8 +3,10 @@
 #include <vamp-sdk/PluginAdapter.h>
 
 #include "TuningDifference.h"
+#include "BulkTuningDifference.h"
 
 static Vamp::PluginAdapter<TuningDifference> tdAdapter;
+static Vamp::PluginAdapter<BulkTuningDifference> bulkTdAdapter;
 
 
 const VampPluginDescriptor *
@@ -14,6 +16,7 @@ vampGetPluginDescriptor(unsigned int version, unsigned int index)
 
     switch (index) {
     case  0: return tdAdapter.getDescriptor();
+    case  1: return bulkTdAdapter.getDescriptor();
     default: return 0;
     }
 }
