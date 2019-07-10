@@ -21,7 +21,7 @@ before_install:
   - sudo apt install -y ./sonic-annotator_1.5_amd64.deb
   - ( cd ../ ; hg clone https://code.soundsoftware.ac.uk/hg/vamp-plugin-sdk )
   - ( cd ../ ; hg clone https://code.soundsoftware.ac.uk/hg/vamp-plugin-tester )
-  - ( cd ../vamp-plugin-sdk ; ./configure --disable-programs && make && sudo make install )
+  - ( cd ../vamp-plugin-sdk ; ./configure --enable-programs=no && make && sudo make install )
   - ( cd ../vamp-plugin-tester ; ./repoint install && make )
 
 script:
