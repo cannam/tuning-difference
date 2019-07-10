@@ -125,7 +125,7 @@ BulkTuningDifference::getMinChannelCount() const
 size_t
 BulkTuningDifference::getMaxChannelCount() const
 {
-    return 256;
+    return 1000;
 }
 
 BulkTuningDifference::ParameterList
