@@ -42,6 +42,8 @@ oggdec -o "$wavfile" "$testfile"
 
 rubberband -p -2.34 "$wavfile" "$lowfile"
 
+mkdir -p "$mydir/output"
+
 VAMP_PATH="$mydir/.." \
          time \
 	 sonic-annotator \

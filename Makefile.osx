@@ -3,7 +3,7 @@
 
 CFLAGS		:= -Wall -Wextra -O3 -ftree-vectorize -fPIC
 
-ARCHFLAGS	?= -mmacosx-version-min=10.6 -arch x86_64 -arch i386
+ARCHFLAGS	?= -arch x86_64 -mmacosx-version-min=10.7 -stdlib=libc++
 
 VAMPSDK_DIR	:= ../vamp-plugin-sdk
 

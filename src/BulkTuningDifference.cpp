@@ -37,14 +37,13 @@ static double frequencyForCentsAbove440(double cents)
 }
 
 static float defaultMaxDuration = 0.f;
-static int defaultMaxSemis = 4;
+static int defaultMaxSemis = 5;
 static bool defaultFineTuning = true;
 
 BulkTuningDifference::BulkTuningDifference(float inputSampleRate) :
     Plugin(inputSampleRate),
     m_channelCount(0),
     m_bpo(120),
-    m_refChroma(new Chromagram(paramsForTuningFrequency(440.))),
     m_blockSize(0),
     m_frameCount(0),
     m_maxDuration(defaultMaxDuration),
@@ -303,12 +302,10 @@ bool
 BulkTuningDifference::initialise(size_t channels, size_t stepSize, size_t blockSize)
 {
     if (channels < getMinChannelCount()) return false;
-
-    m_channelCount = channels;
-    
     if (stepSize != blockSize) return false;
     if (m_blockSize > INT_MAX) return false;
 
+    m_channelCount = int(channels);
     m_blockSize = int(blockSize);
 
     reset();
@@ -319,13 +316,17 @@ BulkTuningDifference::initialise(size_t channels, size_t stepSize, size_t blockS
 void
 BulkTuningDifference::reset()
 {
-    if (m_frameCount > 0) {
-	m_refChroma.reset(new Chromagram(paramsForTuningFrequency(440.)));
-	m_frameCount = 0;
-    }
+    Chromagram::Parameters params(paramsForTuningFrequency(440.));
+    m_reference.clear();
+    m_refChroma.reset(new Chromagram(params));
     m_refTotals = TFeature(m_bpo, 0.0);
-    m_others = vector<Signal>(m_channelCount - 1);
-    
+    m_refFeatures.clear();
+    m_otherChroma.clear();
+    for (int i = 1; i < m_channelCount; ++i) {
+        m_otherChroma.push_back(std::make_shared<Chromagram>(params));
+    }
+    m_otherTotals = vector<TFeature>(m_channelCount-1, TFeature(m_bpo, 0.0));
+    m_frameCount = 0;
 }
 
 template<typename T>
@@ -355,13 +356,11 @@ BulkTuningDifference::computeFeatureFromTotals(const TFeature &totals) const
 	sum += value;
     }
 
-    for (int i = 0; i < m_bpo; ++i) {
-	feature[i] /= sum;
+    if (sum != 0.0) {
+        for (int i = 0; i < m_bpo; ++i) {
+            feature[i] /= sum;
+        }
     }
-
-//    cerr << "computeFeatureFromTotals: feature values:" << endl;
-//    for (auto v: feature) cerr << v << " ";
-//    cerr << endl;
     
     return feature;
 }
@@ -409,7 +408,7 @@ BulkTuningDifference::process(const float *const *inputBuffers, Vamp::RealTime)
                             float(m_blockSize));
         if (m_frameCount > maxFrames) return FeatureSet();
     }
-    
+
     CQBase::RealBlock block;
     CQBase::RealSequence input;
 
@@ -418,118 +417,21 @@ BulkTuningDifference::process(const float *const *inputBuffers, Vamp::RealTime)
     block = m_refChroma->process(input);
     for (const auto &v: block) addTo(m_refTotals, v);
 
+    if (m_fineTuning) {
+        m_reference.insert(m_reference.end(),
+                           inputBuffers[0],
+                           inputBuffers[0] + m_blockSize);
+    }
+
     for (int c = 1; c < m_channelCount; ++c) {
-        m_others[c-1].insert(m_others[c-1].end(),
-                             inputBuffers[c],
-                             inputBuffers[c] + m_blockSize);
+        input = CQBase::RealSequence
+            (inputBuffers[c], inputBuffers[c] + m_blockSize);
+        block = m_otherChroma[c-1]->process(input);
+        for (const auto &v: block) addTo(m_otherTotals[c-1], v);
     }
     
     ++m_frameCount;
     return FeatureSet();
-}
-
-void
-BulkTuningDifference::rotateFeature(TFeature &r, int rotation) const
-{
-    if (rotation < 0) {
-        rotate(r.begin(), r.begin() - rotation, r.end());
-    } else {
-        rotate(r.begin(), r.end() - rotation, r.end());
-    }
-}
-
-double
-BulkTuningDifference::featureDistance(const TFeature &other, int rotation) const
-{
-    if (rotation == 0) {
-	return distance(m_refFeature, other);
-    } else {
-	// A positive rotation pushes the tuning frequency up for this
-	// chroma, negative one pulls it down. If a positive rotation
-	// makes this chroma match an un-rotated reference, then this
-	// chroma must have initially been lower than the reference.
-	TFeature r(other);
-        rotateFeature(r, rotation);
-	return distance(m_refFeature, r);
-    }
-}
-
-int
-BulkTuningDifference::findBestRotation(const TFeature &other) const
-{
-    map<double, int> dists;
-
-    int maxRotation = (m_bpo * m_maxSemis) / 12;
-
-    for (int r = -maxRotation; r <= maxRotation; ++r) {
-	double dist = featureDistance(other, r);
-	dists[dist] = r;
-//	cerr << "rotation " << r << ": score " << dist << endl;
-    }
-
-    int best = dists.begin()->second;
-
-//    cerr << "best is " << best << endl;
-    return best;
-}
-
-pair<int, double>
-BulkTuningDifference::findFineFrequency(int channel, int coarseCents)
-{
-    int coarseResolution = 1200 / m_bpo;
-    int searchDistance = coarseResolution/2 - 1;
-
-    int bestCents = coarseCents;
-    double bestHz = frequencyForCentsAbove440(coarseCents);
-
-    if (!m_fineTuning) {
-        cerr << "fine tuning disabled, returning coarse Hz " << bestHz << " and cents " << bestCents << " in lieu of fine ones" << endl;
-        return pair<int, double>(bestCents, bestHz);
-    }
-    
-    //!!! This is kind of absurd - all this brute force but all we're
-    //!!! really doing is aligning two very short signals at
-    //!!! sub-sample level - let's rewrite it someday
-    
-    cerr << "findFineFrequency: coarse frequency is " << bestHz << endl;
-    cerr << "searchDistance = " << searchDistance << endl;
-
-    double bestScore = 0;
-    bool firstScore = true;
-    
-    for (int sign = -1; sign <= 1; sign += 2) {
-	for (int offset = (sign < 0 ? 0 : 1);
-             offset <= searchDistance;
-             ++offset) {
-
-	    int fineCents = coarseCents + sign * offset;
-
-	    cerr << "trying with fineCents = " << fineCents << "..." << endl;
-	    
-	    double fineHz = frequencyForCentsAbove440(fineCents);
-	    TFeature fineFeature = computeFeatureFromSignal
-                (m_others[channel-1], fineHz);
-	    double fineScore = featureDistance(fineFeature);
-
-	    cerr << "fine offset = " << offset << ", cents = " << fineCents
-		 << ", Hz = " << fineHz << ", score " << fineScore
-		 << " (best score so far " << bestScore << ")" << endl;
-	    
-	    if ((fineScore < bestScore) || firstScore) {
-		cerr << "is good!" << endl;
-		bestScore = fineScore;
-		bestCents = fineCents;
-		bestHz = fineHz;
-                firstScore = false;
-	    } else {
-		break;
-	    }
-	}
-    }
-
-    //!!! could keep a vector of scores & then interpolate...
-    
-    return pair<int, double>(bestCents, bestHz);
 }
 
 BulkTuningDifference::FeatureSet
@@ -538,7 +440,7 @@ BulkTuningDifference::getRemainingFeatures()
     FeatureSet fs;
     if (m_frameCount == 0) return fs;
 
-    m_refFeature = computeFeatureFromTotals(m_refTotals);
+    m_refFeatures[0] = computeFeatureFromTotals(m_refTotals);
 
     Feature f;
     f.hasTimestamp = true;
@@ -558,39 +460,40 @@ void
 BulkTuningDifference::getRemainingFeaturesForChannel(int channel,
                                                      FeatureSet &fs)
 {
-    TFeature otherFeature = computeFeatureFromSignal
-        (m_others[channel-1], 440.);
+    TFeature otherFeature =
+        computeFeatureFromTotals(m_otherTotals[channel-1]);
 
     Feature f;
     f.hasTimestamp = true;
     f.timestamp = Vamp::RealTime::zeroTime;
 
     f.values.clear();
-    for (auto v: m_refFeature) f.values.push_back(float(v));
+    for (auto v: m_refFeatures[0]) f.values.push_back(float(v));
     fs[m_outputs["reffeature"]].push_back(f);
 
     f.values.clear();
     for (auto v: otherFeature) f.values.push_back(float(v));
     fs[m_outputs["otherfeature"]].push_back(f); 
    
-    int rotation = findBestRotation(otherFeature);
+    int rotation = findBestRotation(m_refFeatures[0], otherFeature);
 
     int coarseCents = -(rotation * 1200) / m_bpo;
 
     cerr << "channel " << channel << ": rotation " << rotation << " -> cents " << coarseCents << endl;
 
-    TFeature coarseFeature = otherFeature;
+    TFeature rotatedFeature = otherFeature;
     if (rotation != 0) {
-        rotateFeature(coarseFeature, rotation);
+        rotateFeature(rotatedFeature, rotation);
     }
 
     f.values.clear();
-    for (auto v: coarseFeature) f.values.push_back(float(v));
+    for (auto v: rotatedFeature) f.values.push_back(float(v));
     fs[m_outputs["rotfeature"]].push_back(f);
 
     if (m_fineTuning) {
     
-        pair<int, double> fine = findFineFrequency(channel, coarseCents);
+        pair<int, double> fine = findFineFrequency(rotatedFeature, coarseCents);
+
         int fineCents = fine.first;
         double fineHz = fine.second;
 
@@ -605,5 +508,120 @@ BulkTuningDifference::getRemainingFeaturesForChannel(int channel,
         fs[m_outputs["tuningfreq"]][0].values.push_back
             (float(frequencyForCentsAbove440(coarseCents)));
     }        
+}
+
+void
+BulkTuningDifference::rotateFeature(TFeature &r, int rotation) const
+{
+    if (rotation < 0) {
+        rotate(r.begin(), r.begin() - rotation, r.end());
+    } else {
+        rotate(r.begin(), r.end() - rotation, r.end());
+    }
+}
+
+double
+BulkTuningDifference::featureDistance(const TFeature &ref,
+                                      const TFeature &other,
+                                      int rotation) const
+{
+    if (rotation == 0) {
+	return distance(ref, other);
+    } else {
+	// A positive rotation pushes the tuning frequency up for this
+	// chroma, negative one pulls it down. If a positive rotation
+	// makes this chroma match an un-rotated reference, then this
+	// chroma must have initially been lower than the reference.
+	TFeature r(other);
+        rotateFeature(r, rotation);
+	return distance(ref, r);
+    }
+}
+
+int
+BulkTuningDifference::findBestRotation(const TFeature &ref,
+                                       const TFeature &other) const
+{
+    map<double, int> dists;
+
+    int maxRotation = (m_bpo * m_maxSemis) / 12;
+
+    for (int r = -maxRotation; r <= maxRotation; ++r) {
+	double dist = featureDistance(ref, other, r);
+	dists[dist] = r;
+    }
+
+    int best = dists.begin()->second;
+
+    return best;
+}
+
+pair<int, double>
+BulkTuningDifference::findFineFrequency(const TFeature &rotatedOtherFeature,
+                                        int coarseCents)
+{
+    int coarseResolution = 1200 / m_bpo;
+    int searchDistance = coarseResolution/2 - 1;
+
+    int bestCents = coarseCents;
+    double bestHz = frequencyForCentsAbove440(coarseCents);
+
+    cerr << "findFineFrequency: coarse frequency is " << bestHz << endl;
+    cerr << "searchDistance = " << searchDistance << endl;
+
+    double bestScore = 0;
+    bool firstScore = true;
+    
+    for (int sign = -1; sign <= 1; sign += 2) {
+	for (int offset = (sign < 0 ? 0 : 1);
+             offset <= searchDistance;
+             ++offset) {
+
+	    int fineCents = coarseCents + sign * offset;
+	    double fineHz = frequencyForCentsAbove440(fineCents);
+
+	    cerr << "trying with fineCents = " << fineCents << "..." << endl;
+
+            // compare the rotated "other" chroma with a reference
+            // chroma shifted by the offset in the opposite direction
+
+            int compensatingCents = -sign * offset;
+            TFeature compensatedReference;
+
+            if (m_refFeatures.find(compensatingCents) == m_refFeatures.end()) {
+                double compensatingHz = frequencyForCentsAbove440
+                    (compensatingCents);
+            
+                compensatedReference = computeFeatureFromSignal
+                    (m_reference, compensatingHz);
+
+                m_refFeatures[compensatingCents] = compensatedReference;
+
+            } else {
+
+                compensatedReference = m_refFeatures[compensatingCents];
+            }
+
+	    double fineScore = featureDistance(compensatedReference,
+                                               rotatedOtherFeature,
+                                               0); // we are rotated already
+
+	    cerr << "fine offset = " << offset << ", cents = " << fineCents
+		 << ", Hz = " << fineHz << ", score " << fineScore
+		 << " (best score so far " << bestScore << ")" << endl;
+	    
+	    if ((fineScore < bestScore) || firstScore) {
+		cerr << "is good!" << endl;
+		bestScore = fineScore;
+		bestCents = fineCents;
+		bestHz = fineHz;
+                firstScore = false;
+	    } else {
+		break;
+	    }
+	}
+    }
+    
+    return pair<int, double>(bestCents, bestHz);
 }
 
