@@ -1,0 +1,101 @@
+@prefix xsd:      <http://www.w3.org/2001/XMLSchema#> .
+@prefix vamp:     <http://purl.org/ontology/vamp/> .
+@prefix td:       <http://vamp-plugins.org/rdf/plugins/tuning-difference#> .
+@prefix :         <#> .
+
+:fine_cents a vamp:Transform ;
+    vamp:plugin td:tuning-difference ;
+    vamp:parameter_binding [
+        vamp:parameter [ vamp:identifier "finetuning" ] ;
+        vamp:value "1"^^xsd:float ;
+    ] ;
+    vamp:output td:tuning-difference_output_cents .
+
+:fine_frequency a vamp:Transform ;
+    vamp:plugin td:tuning-difference ;
+    vamp:parameter_binding [
+        vamp:parameter [ vamp:identifier "finetuning" ] ;
+        vamp:value "1"^^xsd:float ;
+    ] ;
+    vamp:output td:tuning-difference_output_tuningfreq .
+
+:fine_rotated_feature a vamp:Transform ;
+    vamp:plugin td:tuning-difference ;
+    vamp:parameter_binding [
+        vamp:parameter [ vamp:identifier "finetuning" ] ;
+        vamp:value "1"^^xsd:float ;
+    ] ;
+    vamp:output td:tuning-difference_output_rotfeature .
+
+:coarse_cents a vamp:Transform ;
+    vamp:plugin td:tuning-difference ;
+    vamp:parameter_binding [
+        vamp:parameter [ vamp:identifier "finetuning" ] ;
+        vamp:value "0"^^xsd:float ;
+    ] ;
+    vamp:output td:tuning-difference_output_cents .
+
+:coarse_frequency a vamp:Transform ;
+    vamp:plugin td:tuning-difference ;
+    vamp:parameter_binding [
+        vamp:parameter [ vamp:identifier "finetuning" ] ;
+        vamp:value "0"^^xsd:float ;
+    ] ;
+    vamp:output td:tuning-difference_output_tuningfreq .
+
+:coarse_rotated_feature a vamp:Transform ;
+    vamp:plugin td:tuning-difference ;
+    vamp:parameter_binding [
+        vamp:parameter [ vamp:identifier "finetuning" ] ;
+        vamp:value "0"^^xsd:float ;
+    ] ;
+    vamp:output td:tuning-difference_output_rotfeature .
+
+:bulk_fine_cents a vamp:Transform ;
+    vamp:plugin td:bulk-tuning-difference ;
+    vamp:parameter_binding [
+        vamp:parameter [ vamp:identifier "finetuning" ] ;
+        vamp:value "1"^^xsd:float ;
+    ] ;
+    vamp:output td:bulk-tuning-difference_output_cents .
+
+:bulk_fine_frequency a vamp:Transform ;
+    vamp:plugin td:bulk-tuning-difference ;
+    vamp:parameter_binding [
+        vamp:parameter [ vamp:identifier "finetuning" ] ;
+        vamp:value "1"^^xsd:float ;
+    ] ;
+    vamp:output td:bulk-tuning-difference_output_tuningfreq .
+
+:bulk_fine_rotated_feature a vamp:Transform ;
+    vamp:plugin td:bulk-tuning-difference ;
+    vamp:parameter_binding [
+        vamp:parameter [ vamp:identifier "finetuning" ] ;
+        vamp:value "1"^^xsd:float ;
+    ] ;
+    vamp:output td:bulk-tuning-difference_output_rotfeature .
+
+:bulk_coarse_cents a vamp:Transform ;
+    vamp:plugin td:bulk-tuning-difference ;
+    vamp:parameter_binding [
+        vamp:parameter [ vamp:identifier "finetuning" ] ;
+        vamp:value "0"^^xsd:float ;
+    ] ;
+    vamp:output td:bulk-tuning-difference_output_cents .
+
+:bulk_coarse_frequency a vamp:Transform ;
+    vamp:plugin td:bulk-tuning-difference ;
+    vamp:parameter_binding [
+        vamp:parameter [ vamp:identifier "finetuning" ] ;
+        vamp:value "0"^^xsd:float ;
+    ] ;
+    vamp:output td:bulk-tuning-difference_output_tuningfreq .
+
+:bulk_coarse_rotated_feature a vamp:Transform ;
+    vamp:plugin td:bulk-tuning-difference ;
+    vamp:parameter_binding [
+        vamp:parameter [ vamp:identifier "finetuning" ] ;
+        vamp:value "0"^^xsd:float ;
+    ] ;
+    vamp:output td:bulk-tuning-difference_output_rotfeature .
+

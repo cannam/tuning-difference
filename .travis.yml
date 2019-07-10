@@ -14,7 +14,7 @@ addons:
   apt:
     packages:
       - wget
-      - rubberband
+      - rubberband-cli
       
 before_install:
   - ( cd ../ ; hg clone https://code.soundsoftware.ac.uk/hg/vamp-plugin-sdk )

@@ -198,7 +198,7 @@ TuningDifference::getOutputDescriptors() const
 
     d.identifier = "rotfeature";
     d.name = "Other Feature at Rotated Frequency";
-    d.description = "Chroma feature from non-reference channel calculated with the tuning frequency obtained from rotation matching.";
+    d.description = "Chroma feature from non-reference channel calculated with the tuning frequency obtained from rotation matching. Note that this does not take into account any fine tuning, only the basic rotation match.";
     d.unit = "";
     d.hasFixedBinCount = true;
     // caution: implementation dependency on BulkTuningDifference
@@ -252,6 +252,9 @@ TuningDifference::getRemainingFeatures()
 
     fs[m_outputs["otherfeature"]]
         .push_back(bulkFs[m_outputs["otherfeature"]][0]);
+
+    fs[m_outputs["rotfeature"]]
+        .push_back(bulkFs[m_outputs["rotfeature"]][0]);
 
     Feature f;
     f.hasTimestamp = true;

@@ -45,13 +45,11 @@ rubberband -p -2.34 "$wavfile" "$lowfile"
 VAMP_PATH="$mydir/.." \
          time \
 	 sonic-annotator \
-	 -d vamp:tuning-difference:tuning-difference:cents \
-	 -d vamp:tuning-difference:tuning-difference:tuningfreq \
-	 -d vamp:tuning-difference:tuning-difference:rotfeature \
+         -t "$mydir/tests.ttl" \
 	 -w csv \
-	 --csv-omit-filename \
          --csv-basedir "$mydir/output" \
 	 --csv-force \
+	 --csv-omit-filename \
          --multiplex \
 	 "$testfile" \
 	 "$lowfile"

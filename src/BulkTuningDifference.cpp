@@ -284,7 +284,7 @@ BulkTuningDifference::getOutputDescriptors() const
 
     d.identifier = "rotfeature";
     d.name = "Other Features at Rotated Frequency";
-    d.description = "Series of chroma feature vectors from the non-reference audio channels, calculated with the tuning frequency obtained from rotation matching.";
+    d.description = "Series of chroma feature vectors from the non-reference audio channels, calculated with the tuning frequency obtained from rotation matching. Note that this does not take into account any fine tuning, only the basic rotation match.";
     d.unit = "";
     d.hasFixedBinCount = true;
     d.binCount = m_bpo;
@@ -584,18 +584,26 @@ BulkTuningDifference::getRemainingFeaturesForChannel(int channel,
         rotateFeature(coarseFeature, rotation);
     }
 
-    //!!! This should be returning the fine chroma, not the coarse
     f.values.clear();
     for (auto v: coarseFeature) f.values.push_back(float(v));
     fs[m_outputs["rotfeature"]].push_back(f);
 
-    pair<int, double> fine = findFineFrequency(channel, coarseCents);
-    int fineCents = fine.first;
-    double fineHz = fine.second;
-
-    fs[m_outputs["cents"]][0].values.push_back(float(fineCents));
-    fs[m_outputs["tuningfreq"]][0].values.push_back(float(fineHz));
+    if (m_fineTuning) {
     
-    cerr << "channel " << channel << ": overall best Hz = " << fineHz << endl;
+        pair<int, double> fine = findFineFrequency(channel, coarseCents);
+        int fineCents = fine.first;
+        double fineHz = fine.second;
+
+        fs[m_outputs["cents"]][0].values.push_back(float(fineCents));
+        fs[m_outputs["tuningfreq"]][0].values.push_back(float(fineHz));
+    
+        cerr << "channel " << channel << ": overall best Hz = " << fineHz << endl;
+
+    } else {
+
+        fs[m_outputs["cents"]][0].values.push_back(float(coarseCents));
+        fs[m_outputs["tuningfreq"]][0].values.push_back
+            (float(frequencyForCentsAbove440(coarseCents)));
+    }        
 }
 

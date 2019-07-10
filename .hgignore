@@ -1,8 +1,13 @@
 syntax: glob
 *.o
+*.a
 *.so
 *.dll
 *.dylib
 *~
 *.bak
 *.orig
+test/output
+test/input.ogg
+test/input.wav
+test/input-low.wav
