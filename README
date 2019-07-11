@@ -2,21 +2,27 @@
 Plugin to calculate comparative tuning of recordings
 ----------------------------------------------------
 
-This plugin estimates the tuning frequency (concert-A) of a recording,
-by comparing it with a "reference" recording of the same music that
-has a known tuning frequency. The aim is to identify the tuning
-frequency of the unknown recording even in difficult cases, such as
-where A is tuned more than a semitone below 440Hz.
+This plugin estimates the tuning frequency ("concert-A") of one or
+more recordings, by comparing against with a "reference" recording of
+the same music that has a known tuning frequency. It was designed for
+the purpose of identifying the tuning frequency of an unknown
+recording in difficult cases, such as where A is tuned more than a
+semitone below 440Hz.
 
-The reference recording could be another performance at known pitch
-or, for example, a MIDI rendering at 440Hz. The two recordings must be
-in the same key, although I suppose you could also interpret this
-plugin as finding the pitch difference of any transposition between
-the two recordings' keys plus any underlying tuning difference.
+The reference could be another performance made at a known tuning
+frequency or, for example, an audio rendering from MIDI at A=440Hz.
 
-The plugin expects to receive the two different recordings of the same
-piece of music as its two channels of input. (You can provide these
-using the --multiplex option in Sonic Annotator, for example.) If you
+For the plugin to establish the tuning frequency correctly, the two
+recordings must be in the same key. Alternatively, you can use this
+plugin to estimate the pitch difference between two recordings played
+in different keys - where the result will consist of the difference
+attributable to key plus any difference in tuning.
+
+The plugin expects to receive two or more different recordings of the
+same piece of music as its channels of input; the first channel will
+be taken as the reference, and the remaining channels will be
+individually compared against it. (You can provide this channel layout
+using the --multiplex option in Sonic Annotator, for example.)  If you
 feed it a single piece of music, you won't get anything worthwhile.
 
 Example usage:
@@ -32,4 +38,4 @@ processing, this prints
 0.000000000,397.009
 
 
-Chris Cannam, Feb 2015
+Chris Cannam, 2015-2019
