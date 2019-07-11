@@ -16,6 +16,7 @@ addons:
       - wget
       - libsndfile-dev
       - rubberband-cli
+      - mlton
       
 before_install:
   - ( cd ../ ; hg clone https://code.soundsoftware.ac.uk/hg/vamp-plugin-sdk )
