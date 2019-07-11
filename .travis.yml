@@ -16,6 +16,7 @@ addons:
       - wget
       - libsndfile-dev
       - rubberband-cli
+      - vorbis-tools
       - mlton
       
 before_install:
