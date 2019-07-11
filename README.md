@@ -6,6 +6,7 @@ Tuning Difference Plugin
 
  * Home page and downloads: https://code.soundsoftware.ac.uk/projects/tuning-difference
  * Linux and macOS CI build: [![Build Status](https://travis-ci.org/cannam/tuning-difference.svg?branch=master)](https://travis-ci.org/cannam/tuning-difference)
+ * Windows CI build: [![Build status](https://ci.appveyor.com/api/projects/status/62xidu404phrkw05?svg=true)](https://ci.appveyor.com/project/cannam/tuning-difference)
 
 This [Vamp plugin](http://vamp-plugins.org/) estimates the tuning
 frequency ("concert-A") of one or more recordings, by comparing
