@@ -44,7 +44,7 @@ $(PLUGIN): $(PLUGIN_OBJECTS)
 
 $(PLUGIN_OBJECTS): $(PLUGIN_HEADERS)
 
-test:	$(PLUGIN)
+test:	all
 	bash test/regression.sh
 
 clean:
