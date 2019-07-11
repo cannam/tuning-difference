@@ -137,6 +137,8 @@
     <ClCompile Include="constant-q-cpp\src\Pitch.cpp" />
     <ClCompile Include="src\plugins.cpp" />
     <ClCompile Include="src\TuningDifference.cpp" />
+    <ClCompile Include="vamp-plugin-sdk\src\vamp-sdk\PluginAdapter.cpp" />
+    <ClCompile Include="vamp-plugin-sdk\src\vamp-sdk\RealTime.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="constant-q-cpp\cq\Chromagram.h" />
