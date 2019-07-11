@@ -76,6 +76,8 @@
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>$(ProjectDir)\constant-q-cpp;$(ProjectDir)\constant-q-cpp\cq;$(ProjectDir)\constant-q-cpp\src\ext\kissfft;$(ProjectDir)\..\vamp-plugin-sdk;$(ProjectDir)\vamp-plugin-sdk;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>kiss_fft_scalar=double;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <TargetMachine>MachineX86</TargetMachine>
@@ -89,7 +91,8 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <AdditionalIncludeDirectories>C:\Users\Chris\Documents\tuning-difference\constant-q-cpp;C:\Users\Chris\Documents\tuning-difference\constant-q-cpp\cq;C:\Users\Chris\Documents\tuning-difference\constant-q-cpp\src\ext\kissfft;C:\Users\Chris\Documents\vamp-plugin-sdk;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\constant-q-cpp;$(ProjectDir)\constant-q-cpp\cq;$(ProjectDir)\constant-q-cpp\src\ext\kissfft;$(ProjectDir)\..\vamp-plugin-sdk;$(ProjectDir)\vamp-plugin-sdk;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>kiss_fft_scalar=double;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <TargetMachine>MachineX86</TargetMachine>
@@ -100,9 +103,18 @@
       <AdditionalOptions>/EXPORT:vampGetPluginDescriptor %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(ProjectDir)\constant-q-cpp;$(ProjectDir)\constant-q-cpp\cq;$(ProjectDir)\constant-q-cpp\src\ext\kissfft;$(ProjectDir)\constant-q-cpp\src\ext\kissfft\tools;$(ProjectDir)\..\vamp-plugin-sdk;$(ProjectDir)\vamp-plugin-sdk;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>kiss_fft_scalar=double;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalOptions>/EXPORT:vampGetPluginDescriptor %(AdditionalOptions)</AdditionalOptions>
+    </Link>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Users\Chris\Documents\tuning-difference\constant-q-cpp;C:\Users\Chris\Documents\tuning-difference\constant-q-cpp\cq;C:\Users\Chris\Documents\tuning-difference\constant-q-cpp\src\ext\kissfft;C:\Users\Chris\Documents\tuning-difference\constant-q-cpp\src\ext\kissfft\tools;C:\Users\Chris\Documents\vamp-plugin-sdk;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\constant-q-cpp;$(ProjectDir)\constant-q-cpp\cq;$(ProjectDir)\constant-q-cpp\src\ext\kissfft;$(ProjectDir)\constant-q-cpp\src\ext\kissfft\tools;$(ProjectDir)\..\vamp-plugin-sdk;$(ProjectDir)\vamp-plugin-sdk;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>kiss_fft_scalar=double;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
