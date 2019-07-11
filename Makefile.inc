@@ -5,11 +5,11 @@ PLUGIN_LIBRARY_NAME := tuning-difference
 
 # Edit this to list the .cpp or .c files in your plugin project
 #
-PLUGIN_SOURCES := src/TuningDifference.cpp src/BulkTuningDifference.cpp src/plugins.cpp
+PLUGIN_SOURCES := src/TuningDifference.cpp src/plugins.cpp
 
 # Edit this to list the .h files in your plugin project
 #
-PLUGIN_HEADERS := src/TuningDifference.h src/BulkTuningDifference.h
+PLUGIN_HEADERS := src/TuningDifference.h
 
 
 ##  Normally you should not edit anything below this line
