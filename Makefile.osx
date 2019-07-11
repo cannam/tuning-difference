@@ -2,6 +2,7 @@
 #CFLAGS		:= -Wall -Wextra -g -fPIC
 
 CFLAGS		:= -Wall -Wextra -O3 -ftree-vectorize -fPIC
+CXXFLAGS        := -std=c++11
 
 ARCHFLAGS	?= -arch x86_64 -mmacosx-version-min=10.7 -stdlib=libc++
 

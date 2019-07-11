@@ -1,8 +1,9 @@
 
 
-#CXXFLAGS	:= -Wall -Wextra -Werror -g -fPIC -std=c++11
+#CFLAGS	:= -Wall -Wextra -Werror -g -fPIC -std=c++11
 
-CXXFLAGS	:= -Wall -Wextra -Werror -O3 -msse -msse2 -mfpmath=sse -ftree-vectorize -fPIC -std=c++11
+CFLAGS          := -Wall -Wextra -Werror -O3 -msse -msse2 -mfpmath=sse -ftree-vectorize -fPIC
+CXXFLAGS	:= -std=c++11
 
 VAMPSDK_DIR	:= ../vamp-plugin-sdk
 

@@ -223,11 +223,11 @@ BulkTuningDifference::getOutputDescriptors() const
     d.name = "Tuning Differences";
     d.description = "A single feature vector containing a value for each input channel after the first (reference) channel, containing the difference in averaged frequency profile between that channel and the reference channel, in cents. A positive value means the corresponding channel is higher than the reference.";
     d.unit = "cents";
+    d.hasFixedBinCount = true;
     if (m_channelCount > 1) {
-        d.hasFixedBinCount = true;
         d.binCount = m_channelCount - 1;
     } else {
-        d.hasFixedBinCount = false;
+        d.binCount = 1;
     }
     d.hasKnownExtents = false;
     d.isQuantized = false;
@@ -240,11 +240,11 @@ BulkTuningDifference::getOutputDescriptors() const
     d.name = "Relative Tuning Frequencies";
     d.description = "A single feature vector containing a value for each input channel after the first (reference) channel, containing the tuning frequency of that channel, if the reference channel is assumed to contain the same music as it at a tuning frequency of A=440Hz.";
     d.unit = "hz";
+    d.hasFixedBinCount = true;
     if (m_channelCount > 1) {
-        d.hasFixedBinCount = true;
         d.binCount = m_channelCount - 1;
     } else {
-        d.hasFixedBinCount = false;
+        d.binCount = 1;
     }
     d.hasKnownExtents = false;
     d.isQuantized = false;
