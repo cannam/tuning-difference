@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{76D69ED9-F058-49AF-B812-282C48C7A568}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;TUNINGDIFFERENCE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <Optimization>Disabled</Optimization>
+    </ClCompile>
+    <Link>
+      <TargetMachine>MachineX86</TargetMachine>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;TUNINGDIFFERENCE_EXPORTS;kiss_fft_scalar=double;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <AdditionalIncludeDirectories>C:\Users\Chris\Documents\tuning-difference\constant-q-cpp;C:\Users\Chris\Documents\tuning-difference\constant-q-cpp\cq;C:\Users\Chris\Documents\tuning-difference\constant-q-cpp\src\ext\kissfft;C:\Users\Chris\Documents\vamp-plugin-sdk;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <TargetMachine>MachineX86</TargetMachine>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalOptions>/EXPORT:vampGetPluginDescriptor %(AdditionalOptions)</AdditionalOptions>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\Users\Chris\Documents\tuning-difference\constant-q-cpp;C:\Users\Chris\Documents\tuning-difference\constant-q-cpp\cq;C:\Users\Chris\Documents\tuning-difference\constant-q-cpp\src\ext\kissfft;C:\Users\Chris\Documents\tuning-difference\constant-q-cpp\src\ext\kissfft\tools;C:\Users\Chris\Documents\vamp-plugin-sdk;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>kiss_fft_scalar=double;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalOptions>/EXPORT:vampGetPluginDescriptor %(AdditionalOptions)</AdditionalOptions>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="constant-q-cpp\src\Chromagram.cpp" />
+    <ClCompile Include="constant-q-cpp\src\ConstantQ.cpp" />
+    <ClCompile Include="constant-q-cpp\src\CQInverse.cpp" />
+    <ClCompile Include="constant-q-cpp\src\CQKernel.cpp" />
+    <ClCompile Include="constant-q-cpp\src\CQSpectrogram.cpp" />
+    <ClCompile Include="constant-q-cpp\src\dsp\FFT.cpp" />
+    <ClCompile Include="constant-q-cpp\src\dsp\KaiserWindow.cpp" />
+    <ClCompile Include="constant-q-cpp\src\dsp\MathUtilities.cpp" />
+    <ClCompile Include="constant-q-cpp\src\dsp\Resampler.cpp" />
+    <ClCompile Include="constant-q-cpp\src\dsp\SincWindow.cpp" />
+    <ClCompile Include="constant-q-cpp\src\ext\kissfft\kiss_fft.c" />
+    <ClCompile Include="constant-q-cpp\src\ext\kissfft\tools\kiss_fftr.c" />
+    <ClCompile Include="constant-q-cpp\src\Pitch.cpp" />
+    <ClCompile Include="src\plugins.cpp" />
+    <ClCompile Include="src\TuningDifference.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="constant-q-cpp\cq\Chromagram.h" />
+    <ClInclude Include="constant-q-cpp\cq\ConstantQ.h" />
+    <ClInclude Include="constant-q-cpp\cq\CQBase.h" />
+    <ClInclude Include="constant-q-cpp\cq\CQInverse.h" />
+    <ClInclude Include="constant-q-cpp\cq\CQKernel.h" />
+    <ClInclude Include="constant-q-cpp\cq\CQParameters.h" />
+    <ClInclude Include="constant-q-cpp\cq\CQSpectrogram.h" />
+    <ClInclude Include="constant-q-cpp\src\dsp\FFT.h" />
+    <ClInclude Include="constant-q-cpp\src\dsp\KaiserWindow.h" />
+    <ClInclude Include="constant-q-cpp\src\dsp\MathUtilities.h" />
+    <ClInclude Include="constant-q-cpp\src\dsp\nan-inf.h" />
+    <ClInclude Include="constant-q-cpp\src\dsp\pi.h" />
+    <ClInclude Include="constant-q-cpp\src\dsp\Resampler.h" />
+    <ClInclude Include="constant-q-cpp\src\dsp\SincWindow.h" />
+    <ClInclude Include="constant-q-cpp\src\dsp\Window.h" />
+    <ClInclude Include="constant-q-cpp\src\ext\kissfft\kiss_fft.h" />
+    <ClInclude Include="constant-q-cpp\src\ext\kissfft\tools\kiss_fftr.h" />
+    <ClInclude Include="constant-q-cpp\src\ext\kissfft\_kiss_fft_guts.h" />
+    <ClInclude Include="constant-q-cpp\src\Pitch.h" />
+    <ClInclude Include="src\TuningDifference.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
