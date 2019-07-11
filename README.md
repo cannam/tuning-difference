@@ -2,7 +2,7 @@
 Tuning Difference Plugin
 ========================
 
-### A Vamp plugin to calculate comparative tuning of audio recordings
+### A Vamp plugin to calculate comparative tunings of audio recordings
 
  * Home page and downloads: https://code.soundsoftware.ac.uk/projects/tuning-difference
  * Linux and macOS CI build: [![Build Status](https://travis-ci.org/cannam/tuning-difference.svg?branch=master)](https://travis-ci.org/cannam/tuning-difference)
