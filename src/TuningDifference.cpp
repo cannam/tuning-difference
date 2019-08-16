@@ -332,7 +332,13 @@ TuningDifference::reset()
 template<typename T>
 void addTo(vector<T> &a, const vector<T> &b)
 {
-    transform(a.begin(), a.end(), b.begin(), a.begin(), plus<T>());
+    int n = int(b.size());
+
+    for (int i = 0; i < n; ++i) {
+        int j = (i == 0 ? n-1 : i-1);
+        T diff = b[i] - b[j];
+        a[i] += diff;
+    }
 }
 
 template<typename T>
@@ -348,17 +354,19 @@ TuningDifference::computeFeatureFromTotals(const TFeature &totals) const
     if (m_frameCount == 0) return totals;
     
     TFeature feature(m_bpo);
-    double sum = 0.0;
+    double max = 0.0;
 
     for (int i = 0; i < m_bpo; ++i) {
 	double value = totals[i] / m_frameCount;
-	feature[i] += value;
-	sum += value;
+	feature[i] = value;
+        if (fabs(value) > max) {
+            max = fabs(value);
+        }
     }
 
-    if (sum != 0.0) {
+    if (max > 0.0) {
         for (int i = 0; i < m_bpo; ++i) {
-            feature[i] /= sum;
+            feature[i] /= max;
         }
     }
     
